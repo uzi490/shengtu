@@ -15,6 +15,11 @@
             :class="{ active: activeTab === 'my' }"
             @click="activeTab = 'my'"
           >我的工作流</span>
+          <span
+            class="tab-item"
+            :class="{ active: activeTab === 'ecommerce' }"
+            @click="activeTab = 'ecommerce'"
+          >电商提示词库</span>
         </div>
         <button class="expand-btn" @click="visible = false">
           <n-icon :size="16"><CloseOutline /></n-icon>
@@ -38,6 +43,36 @@
               </n-icon>
             </div>
             <div class="card-title">{{ workflow.name }}</div>
+          </div>
+        </div>
+
+        <!-- Ecommerce prompt library | 电商提示词库 -->
+        <div v-else-if="activeTab === 'ecommerce'" class="prompt-library">
+          <div class="category-filter">
+            <button
+              v-for="category in ECOMMERCE_PROMPT_CATEGORIES"
+              :key="category.id"
+              class="category-chip"
+              :class="{ active: activePromptCategory === category.id }"
+              @click="activePromptCategory = category.id"
+            >
+              {{ category.name }}
+            </button>
+          </div>
+
+          <div class="prompt-list">
+            <button
+              v-for="prompt in filteredEcommercePrompts"
+              :key="prompt.id"
+              class="prompt-card"
+              @click="handleAddEcommercePrompt(prompt)"
+            >
+              <div class="prompt-card-main">
+                <div class="prompt-title">{{ prompt.name }}</div>
+                <div class="prompt-desc">{{ prompt.description }}</div>
+              </div>
+              <div class="prompt-meta">{{ getCategoryName(prompt.category) }}</div>
+            </button>
           </div>
         </div>
         
@@ -72,6 +107,11 @@ import {
   ChatbubbleOutline
 } from '@vicons/ionicons5'
 import { WORKFLOW_TEMPLATES } from '../config/workflows'
+import {
+  ECOMMERCE_PROMPT_CATEGORIES,
+  getEcommercePromptsByCategory,
+  createEcommercePromptWorkflow
+} from '../config/ecommercePrompts'
 
 const props = defineProps({
   show: Boolean
@@ -81,6 +121,7 @@ const emit = defineEmits(['update:show', 'add-workflow'])
 
 // Active tab | 当前标签
 const activeTab = ref('public')
+const activePromptCategory = ref('all')
 
 // Visible state | 显示状态
 const visible = computed({
@@ -90,6 +131,11 @@ const visible = computed({
 
 // Public workflows | 公共工作流
 const publicWorkflows = computed(() => WORKFLOW_TEMPLATES)
+
+// Filtered ecommerce prompts | 筛选后的电商提示词
+const filteredEcommercePrompts = computed(() => {
+  return getEcommercePromptsByCategory(activePromptCategory.value)
+})
 
 // Icon mapping | 图标映射
 const iconMap = {
@@ -111,6 +157,20 @@ const handleAddWorkflow = (workflow) => {
   // 直接添加工作流，节点内容由用户自己填写
   emit('add-workflow', { workflow, options: {} })
   visible.value = false
+}
+
+// Handle add ecommerce prompt | 添加电商提示词模板
+const handleAddEcommercePrompt = (prompt) => {
+  emit('add-workflow', {
+    workflow: createEcommercePromptWorkflow(prompt),
+    options: {}
+  })
+  visible.value = false
+}
+
+// Category name | 分类名
+const getCategoryName = (categoryId) => {
+  return ECOMMERCE_PROMPT_CATEGORIES.find((category) => category.id === categoryId)?.name || '模板'
 }
 
 // Handle click outside | 点击外部关闭
@@ -170,7 +230,7 @@ const vClickOutside = {
 
 .panel-tabs {
   display: flex;
-  gap: 24px;
+  gap: 18px;
 }
 
 .tab-item {
@@ -267,6 +327,93 @@ const vClickOutside = {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Prompt library | 提示词库 */
+.prompt-library {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.category-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-chip {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 26px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.category-chip:hover,
+.category-chip.active {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: rgba(64, 158, 255, 0.08);
+}
+
+.prompt-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.prompt-card {
+  width: 100%;
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.prompt-card:hover {
+  border-color: var(--accent-color);
+  transform: translateY(-1px);
+}
+
+.prompt-card-main {
+  min-width: 0;
+}
+
+.prompt-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.prompt-desc {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.prompt-meta {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 12px;
 }
 
 /* Empty state | 空状态 */

@@ -9,39 +9,40 @@
     </div>
     
     <!-- Right section | 右侧区域 -->
-    <div class="flex items-center gap-4">
+    <div class="flex flex-wrap items-center justify-end gap-2 md:gap-3">
       <!-- Center slot | 中间插槽 -->
       <slot name="center"></slot>
-      <!-- 增加按钮跳转 https://api.aiaiai001.com/ -->
-      <button 
-        @click="openJimengAI" 
-        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-sm transition-colors"
-        title="生成视频需前往即梦AI"
+      <router-link
+        to="/assets"
+        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-color)] text-sm transition-colors"
+        title="我的素材库"
       >
-        即梦AI
+        <n-icon :size="16"><ImageOutline /></n-icon>
+        我的素材
+      </router-link>
+      <button
+        @click="openOfficialSite"
+        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-color)] text-sm transition-colors"
+      >
+        工具箱官网
       </button>
-    <!--  <button 
-        @click="openGptMirror" 
-        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm transition-colors"
-        title="GPT镜像站"
-      >
-        GPT镜像
-      </button> -->
       <button
         @click="openApiConsole"
         class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white text-sm transition-colors"
       >
         <img
-          src="../assets/logo.svg"
-          alt="龙城API"
-          class="w-5 h-5 object-contain"
+          src="../assets/logo.png"
+          alt="AIAIAI工具箱官方中转站API"
+          class="w-6 h-6 object-contain"
         />
-        龙城API
+        官方中转站API
       </button>
-      <!-- <span class="text-xs text-[var(--text-tertiary)]" title="生成视频需前往即梦AI">
-        ⚠️ 生成视频请前往即梦AI
-      </span> -->
-  
+      <button
+        @click="openApiTrial"
+        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm transition-colors"
+      >
+        免费试用申请
+      </button>
       
       <!-- Theme toggle | 主题切换 -->
       <button 
@@ -69,23 +70,21 @@ import { NIcon } from 'naive-ui'
 import { 
   SunnyOutline, 
   MoonOutline,
-  LogoGithub
+  ImageOutline
 } from '@vicons/ionicons5'
 import { isDark, toggleTheme } from '../stores/theme'
 
-// 打开龙城API控制台
+const openOfficialSite = () => {
+  window.open('https://aiaiai001.com/', '_blank')
+}
+
+// 打开 AIAIAI 工具箱控制台
 const openApiConsole = () => {
   window.open('https://api.aiaiai001.com/', '_blank')
 }
 
-// 打开即梦AI
-const openJimengAI = () => {
-  window.open('https://jimeng.jianying.com/ai-tool/home/?type=video&workspace=0', '_blank')
-}
-
-// 打开GPT镜像
-const openGptMirror = () => {
-  window.open('https://chat.dajubupang.fun/', '_blank')
+const openApiTrial = () => {
+  window.open('https://api.aiaiai001.com/register', '_blank')
 }
 
 // Props | 属性

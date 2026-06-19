@@ -198,11 +198,12 @@ import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import { NIcon, NDropdown, NSpin } from 'naive-ui'
 import { ChevronDownOutline, ChevronForwardOutline, CopyOutline, TrashOutline, RefreshOutline, AddOutline, ImageOutline, CreateOutline } from '@vicons/ionicons5'
 import { useImageGeneration } from '../../hooks'
-import { updateNode, addNode, addEdge, nodes, edges, duplicateNode, removeNode } from '../../stores/canvas'
+import { updateNode, addNode, addEdge, nodes, edges, duplicateNode, removeNode, currentProjectId } from '../../stores/canvas'
 import NodeHandleMenu from './NodeHandleMenu.vue'
 import { useModelStore } from '../../stores/pinia'
 import { getModelSizeOptions, getModelQualityOptions, getModelConfig, DEFAULT_IMAGE_MODEL } from '../../stores/models'
 import { parseMentions } from '../../hooks/useNodeRef'
+import { registerTemporaryAsset } from '../../api/assets'
 
 // 使用 Pinia store 获取模型选项（根据渠道过滤）
 const modelStore = useModelStore()
@@ -591,6 +592,25 @@ const updateSize = () => {
 // Created image node ID | 创建的图片节点 ID
 const createdImageNodeId = ref(null)
 
+const registerGeneratedAsset = async (image, index, prompt) => {
+  if (!image?.url) return null
+
+  try {
+    const { asset } = await registerTemporaryAsset({
+      url: image.url,
+      title: `${props.data?.label || '文生图'} ${index + 1}`,
+      prompt,
+      model: localModel.value,
+      projectId: currentProjectId.value,
+      nodeId: props.id
+    })
+    return asset
+  } catch (err) {
+    console.warn('[ImageConfigNode] register temporary asset failed:', err)
+    return null
+  }
+}
+
 // Find connected output image node | 查找已连接的输出图片节点
 const findConnectedOutputImageNode = (onlyEmpty = true) => {
   // Find edges where this node is the source | 查找以当前节点为源的边
@@ -728,24 +748,39 @@ const handleGenerate = async (mode = 'auto') => {
     selectedImageIndex.value = 0
 
     if (result && result.length > 0) {
+      const registeredAssets = await Promise.all(
+        result.map((image, index) => registerGeneratedAsset(image, index, prompt))
+      )
+      const hasAssetRegisterFailure = registeredAssets.some((asset, index) => !asset && result[index]?.url)
+
       if (result.length === 1) {
+        const asset = registeredAssets[0]
         // Single image: update existing node | 单图：更新现有节点
         updateNode(imageNodeId, {
-          url: result[0].url,
+          url: asset?.url || result[0].url,
           loading: false,
           label: '文生图',
           model: localModel.value,
+          temporaryAssetId: asset?.id || '',
+          assetId: asset?.id || '',
+          assetExpiresAt: asset?.expiresAt || '',
+          assetRetentionHours: asset ? 24 : null,
           updatedAt: Date.now()
         })
         updateNode(props.id, { executed: true, outputNodeId: imageNodeId })
       } else {
+        const firstAsset = registeredAssets[0]
         // Multiple images: create one node per image, stacked | 多图：每个结果创建一个节点，垂直堆叠
         // First image updates the auto-created node | 第一个更新自动创建的节点
         updateNode(imageNodeId, {
-          url: result[0].url,
+          url: firstAsset?.url || result[0].url,
           loading: false,
           label: '文生图 1/' + result.length,
           model: localModel.value,
+          temporaryAssetId: firstAsset?.id || '',
+          assetId: firstAsset?.id || '',
+          assetExpiresAt: firstAsset?.expiresAt || '',
+          assetRetentionHours: firstAsset ? 24 : null,
           updatedAt: Date.now()
         })
 
@@ -754,14 +789,19 @@ const handleGenerate = async (mode = 'auto') => {
         const baseY = currentNode?.position?.y || 0
 
         for (let i = 1; i < result.length; i++) {
+          const asset = registeredAssets[i]
           const newImageNodeId = addNode('image', {
             x: (currentNode?.position?.x || 0) + 400,
             y: baseY + i * 280
           }, {
-            url: result[i].url,
+            url: asset?.url || result[i].url,
             label: `文生图 ${i + 1}/${result.length}`,
             model: localModel.value,
             loading: false,
+            temporaryAssetId: asset?.id || '',
+            assetId: asset?.id || '',
+            assetExpiresAt: asset?.expiresAt || '',
+            assetRetentionHours: asset ? 24 : null,
             updatedAt: Date.now()
           })
           addEdge({
@@ -774,6 +814,10 @@ const handleGenerate = async (mode = 'auto') => {
 
         // Re-connect first node properly | 重新连接第一个节点
         updateNode(props.id, { executed: true, outputNodeId: imageNodeId })
+      }
+
+      if (hasAssetRegisterFailure) {
+        window.$message?.warning('图片已生成，但素材库缓存失败，请及时下载')
       }
     }
     window.$message?.success('图片生成成功')

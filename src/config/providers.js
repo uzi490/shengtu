@@ -3,11 +3,14 @@
  * 适配不同 API 提供商的请求参数和响应格式
  */
 
+export const LOCKED_PROVIDER = 'longcheng'
+export const LOCKED_API_BASE_URL = 'https://api.aiaiai001.com'
+
 // 渠道适配配置
 export const PROVIDERS = {
   longcheng: {
-    label: '龙城 (Longcheng)',
-    defaultBaseUrl: 'https://api.aiaiai001.com',
+    label: 'AIAIAI工具箱',
+    defaultBaseUrl: LOCKED_API_BASE_URL,
     // 端点路径
     endpoints: {
       chat: '/v1/chat/completions',
@@ -17,7 +20,7 @@ export const PROVIDERS = {
       // Gemini 生图专用端点
       geminiImage: '/v1beta/models/{model}:generateContent'
     },
-    // 龙城路由请求适配
+    // AIAIAI 路由请求适配
     requestAdapter: {
       chat: (params) => {
         const adapted = {
@@ -234,7 +237,7 @@ export const PROVIDERS = {
         return adapted
       }
     },
-    // 龙城路由响应格式
+    // AIAIAI 路由响应格式
     responseAdapter: {
       chat: (response) => {
         if (response.choices && response.choices.length > 0) {
@@ -543,7 +546,7 @@ export const PROVIDERS = {
 
   // 百度 ERNIE-Image 模型渠道
   baidu: {
-    label: '龙城 (ERNIE-Image)',
+    label: 'AIAIAI (ERNIE-Image)',
     defaultBaseUrl: 'https://api.aiaiai001.com',
     endpoints: {
       image: '/v1/images/generations'
@@ -715,7 +718,7 @@ export const PROVIDERS = {
     }
   },
 
-  // 默认使用龙城格式
+  // 默认使用 AIAIAI 格式
   default: 'longcheng'
 }
 
@@ -734,13 +737,12 @@ export const MINIMAX_BASE_URL = 'https://api.minimaxi.com'
 
 // 获取默认渠道
 export const getDefaultProvider = () => {
-  return PROVIDERS.default || 'longcheng'
+  return LOCKED_PROVIDER
 }
 
 // 获取渠道的默认 Base URL
 export const getDefaultBaseUrl = (providerKey) => {
-  const config = getProviderConfig(providerKey)
-  return config.defaultBaseUrl || ''
+  return LOCKED_API_BASE_URL
 }
 
 // 获取渠道配置
