@@ -15,20 +15,9 @@ function migrateProviderData() {
     localStorage.setItem('api-provider', 'longcheng')
   }
 
-  // 2. 迁移 api-keys-by-provider
-  const apiKeysJson = localStorage.getItem('api-keys-by-provider')
-  if (apiKeysJson) {
-    try {
-      const apiKeys = JSON.parse(apiKeysJson)
-      if (apiKeys.xiaodao) {
-        apiKeys.longcheng = apiKeys.xiaodao
-        delete apiKeys.xiaodao
-        localStorage.setItem('api-keys-by-provider', JSON.stringify(apiKeys))
-      }
-    } catch (e) {
-      console.warn('Failed to migrate api-keys-by-provider:', e)
-    }
-  }
+  // 2. 清理旧版浏览器端 API Key。生产 Key 现在由服务器环境变量托管。
+  localStorage.removeItem('apiKey')
+  localStorage.removeItem('api-keys-by-provider')
 
   // 3. 迁移 base-urls-by-provider
   const baseUrlsJson = localStorage.getItem('base-urls-by-provider')

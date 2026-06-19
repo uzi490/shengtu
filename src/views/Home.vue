@@ -446,8 +446,8 @@ const checkApiKeyAndNavigate = (callback) => {
   
   if (!isApiConfigured.value) {
     dialog.warning({
-      title: '未配置 API Key',
-      content: '请先在设置中配置 API Key 才能使用画布工坊。',
+      title: 'AI 服务未就绪',
+      content: '服务端 AI 暂未就绪，请稍后重试。',
       positiveText: '知道了'
     })
     return false

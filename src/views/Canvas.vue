@@ -696,7 +696,7 @@ const handlePolish = async () => {
   
   // Check API configuration | 检查 API 配置
   if (!isApiConfigured.value) {
-    window.$message?.warning('请先配置 API Key')
+    window.$message?.warning('服务端 AI 暂未就绪，请稍后重试')
     showApiSettings.value = true
     return
   }
@@ -727,7 +727,7 @@ const sendMessage = async () => {
 
   // Check API configuration | 检查 API 配置
   if (!isApiConfigured.value) {
-    window.$message?.warning('请先配置 API Key')
+    window.$message?.warning('服务端 AI 暂未就绪，请稍后重试')
     showApiSettings.value = true
     return
   }
