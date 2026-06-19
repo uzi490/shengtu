@@ -156,13 +156,18 @@ export const useModelStore = defineStore('model', () => {
   const apiKeysByProvider = ref(getStoredJson(STORAGE_KEYS.API_KEYS_BY_PROVIDER, {}))
   const baseUrlsByProvider = ref(getStoredJson(STORAGE_KEYS.BASE_URLS_BY_PROVIDER, {}))
 
-  // 当前渠道的 API Key 和 Base URL。Key 托管在 Canvas 服务端，前端不再保存生产 Key。
-  const currentApiKey = computed(() => 'server-managed')
+  // 当前渠道的 API Key 和 Base URL。用户 Key 只用于本站代理转发，用于按用户自己的 New API Key 扣费。
+  const currentApiKey = computed(() => apiKeysByProvider.value[LOCKED_PROVIDER] || '')
   const currentBaseUrl = computed(() => LOCKED_API_BASE_URL)
 
   // 设置指定渠道的 API Key
   const setApiKeyByProvider = (provider, apiKey) => {
-    delete apiKeysByProvider.value[provider]
+    const key = String(apiKey || '').trim()
+    if (key) {
+      apiKeysByProvider.value[LOCKED_PROVIDER] = key
+    } else {
+      delete apiKeysByProvider.value[LOCKED_PROVIDER]
+    }
   }
 
   // 设置指定渠道的 Base URL

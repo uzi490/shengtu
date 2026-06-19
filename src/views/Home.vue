@@ -446,8 +446,8 @@ const checkApiKeyAndNavigate = (callback) => {
   
   if (!isApiConfigured.value) {
     dialog.warning({
-      title: 'AI 服务未就绪',
-      content: '服务端 AI 暂未就绪，请稍后重试。',
+      title: '需要 API Key',
+      content: '请先填写你的 AIAIAI API Key，再开始使用商图工坊。',
       positiveText: '知道了'
     })
     return false

@@ -21,17 +21,19 @@
               disabled
             />
             <template #feedback>
-              <span class="text-xs text-[var(--text-secondary)]">已锁定为本站后端代理，浏览器不会保存或暴露生产 API Key。</span>
+              <span class="text-xs text-[var(--text-secondary)]">已锁定为本站后端代理，请求会走服务器内网中转。</span>
             </template>
           </n-form-item>
-          <n-form-item label="API Key">
+          <n-form-item label="API Key" path="apiKey">
             <n-input
-              value="由服务器托管"
-              readonly
-              disabled
+              v-model:value="formData.apiKey"
+              type="password"
+              show-password-on="click"
+              placeholder="粘贴你的 AIAIAI API Key"
+              clearable
             />
             <template #feedback>
-              <span class="text-xs text-[var(--text-secondary)]">当前站点使用服务器环境变量中的 AIAIAI Key，普通用户无需填写。</span>
+              <span class="text-xs text-[var(--text-secondary)]">用你自己的中转站 Key 扣费，建议创建“商图工坊专用”分组 Key，包含图片和文本模型。</span>
             </template>
           </n-form-item>
 
@@ -58,8 +60,8 @@
             </div>
           </div>
 
-          <n-alert type="success" title="服务端托管" class="mb-4">
-            AI 服务由本站后端代理，用户浏览器不会直接接触生产 API Key。
+          <n-alert type="info" title="按你的 API Key 扣费" class="mb-4">
+            这里填写的是你自己的 AIAIAI Key。Canvas 只通过本站后端代理转发请求，不再使用站长的统一 Key。
           </n-alert>
         </n-form>
       </n-tab-pane>
@@ -165,7 +167,7 @@
 
     <template #footer>
       <div class="flex justify-between items-center">
-        <span class="text-xs text-[var(--text-secondary)]">生产 Key 由服务器托管</span>
+        <span class="text-xs text-[var(--text-secondary)]">{{ isConfigured ? '已配置用户 API Key' : '未配置 API Key' }}</span>
         <div class="flex gap-2">
           <n-button @click="handleClear" tertiary>清除配置</n-button>
           <n-button @click="showModal = false">取消</n-button>
@@ -197,11 +199,11 @@ const props = defineProps({
 // Emits | 事件
 const emit = defineEmits(['update:show', 'saved'])
 
-// API Config 状态
-const isConfigured = computed(() => true)
-
 // Model Store (Pinia) | 模型配置 Store
 const modelStore = useModelStore()
+
+// API Config 状态
+const isConfigured = computed(() => !!modelStore.currentApiKey)
 
 // Provider options for select | 渠道下拉选项
 const providerOptions = modelStore.providerList.map(p => ({
@@ -242,9 +244,8 @@ const newVideoModel = ref('')
 
 // 初始化或切换渠道时，更新 API 配置
 const updateFormApiConfig = () => {
-  const provider = LOCKED_PROVIDER
-  formData.apiKey = ''
   formData.provider = LOCKED_PROVIDER
+  formData.apiKey = modelStore.currentApiKey
   formData.baseUrl = LOCKED_API_BASE_URL
 }
 
@@ -304,7 +305,13 @@ const handleRemoveVideoModel = (modelKey) => {
 
 // Handle save | 处理保存
 const handleSave = () => {
+  const apiKey = formData.apiKey.trim()
+  if (!apiKey) {
+    window.$message?.warning('请先填写你的 AIAIAI API Key')
+    return
+  }
   modelStore.setProvider(LOCKED_PROVIDER)
+  modelStore.setApiKeyByProvider(LOCKED_PROVIDER, apiKey)
   modelStore.setBaseUrlByProvider(LOCKED_PROVIDER, LOCKED_API_BASE_URL)
   showModal.value = false
   emit('saved')

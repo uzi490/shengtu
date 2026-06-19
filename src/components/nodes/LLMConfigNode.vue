@@ -764,7 +764,7 @@ const getInputFromConnections = () => {
 // Handle generate | 处理生成
 const handleGenerate = async () => {
   if (!isApiConfigured.value) {
-    window.$message?.warning('服务端 AI 暂未就绪，请稍后重试')
+    window.$message?.warning('请先填写你的 AIAIAI API Key')
     return
   }
 

@@ -11,7 +11,6 @@ const uploadsDir = path.join(dataDir, 'uploads')
 const dbPath = path.join(dataDir, 'assets.json')
 const port = Number(process.env.PORT || 8080)
 const upstreamApiBaseUrl = normalizeBaseUrl(process.env.CANVAS_UPSTREAM_API_BASE_URL || 'http://127.0.0.1:3000')
-const upstreamApiKey = process.env.CANVAS_UPSTREAM_API_KEY || ''
 
 const NORMAL_LIMIT_COUNT = Number(process.env.ASSET_LIMIT_COUNT || 50)
 const NORMAL_LIMIT_BYTES = Number(process.env.ASSET_LIMIT_BYTES || 500 * 1024 * 1024)
@@ -80,8 +79,9 @@ async function ensureStorage() {
 }
 
 async function handleAiProxy(req, res, requestUrl) {
-  if (!upstreamApiKey) {
-    sendJson(res, 503, { error: 'AI 服务未配置，请联系管理员' })
+  const authorization = getAuthorizationHeader(req)
+  if (!authorization) {
+    sendJson(res, 401, { error: '请先填写你的 AIAIAI API Key' })
     return
   }
 
@@ -95,7 +95,7 @@ async function handleAiProxy(req, res, requestUrl) {
   upstreamUrl.search = requestUrl.search
 
   const headers = {
-    'Authorization': `Bearer ${upstreamApiKey}`,
+    'Authorization': authorization,
     'Accept': req.headers.accept || 'application/json'
   }
 
@@ -140,6 +140,15 @@ async function handleAiProxy(req, res, requestUrl) {
     console.error('[ai-proxy] upstream stream failed', error)
     res.destroy(error)
   }
+}
+
+function getAuthorizationHeader(req) {
+  const header = req.headers.authorization
+  const value = Array.isArray(header) ? header[0] : header
+  if (!value || typeof value !== 'string') return ''
+  const trimmed = value.trim()
+  if (!/^Bearer\s+\S+/i.test(trimmed)) return ''
+  return trimmed
 }
 
 async function handleAssetApi(req, res, requestUrl) {

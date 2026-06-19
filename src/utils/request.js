@@ -5,6 +5,22 @@
 
 import axios from 'axios'
 
+const LOCKED_PROVIDER = 'longcheng'
+
+export const getStoredApiKey = () => {
+  try {
+    const apiKeys = JSON.parse(localStorage.getItem('api-keys-by-provider') || '{}')
+    return String(apiKeys[LOCKED_PROVIDER] || '').trim()
+  } catch {
+    return ''
+  }
+}
+
+const isAiProxyRequest = (url = '') => {
+  const value = String(url)
+  return value.startsWith('/api/ai/') || value.includes('/api/ai/')
+}
+
 // Create axios instance | 创建 axios 实例
 const instance = axios.create({
   baseURL: "/",
@@ -14,6 +30,13 @@ const instance = axios.create({
 // Request interceptor | 请求拦截器
 instance.interceptors.request.use(
   (config) => {
+    if (isAiProxyRequest(config.url)) {
+      const apiKey = getStoredApiKey()
+      if (apiKey) {
+        config.headers = config.headers || {}
+        config.headers.Authorization = `Bearer ${apiKey}`
+      }
+    }
     return config
   },
   (error) => {

@@ -667,7 +667,7 @@ const handleGenerate = async (mode = 'auto') => {
   }
 
   if (!isConfigured.value) {
-    window.$message?.warning('服务端 AI 暂未就绪，请稍后重试')
+    window.$message?.warning('请先填写你的 AIAIAI API Key')
     return
   }
 
