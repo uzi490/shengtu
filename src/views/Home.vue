@@ -19,12 +19,31 @@
     <main class="max-w-6xl mx-auto px-4 py-6 md:py-10">
       <section class="mb-8 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] p-5 shadow-sm">
         <div class="flex flex-col gap-5">
-          <div>
-            <p class="text-xs font-semibold text-[var(--accent-color)]">公告栏</p>
-            <h2 class="mt-1 text-lg font-semibold text-[var(--text-primary)]">加入 AIAIAI 工具箱交流群</h2>
-            <p class="mt-1 text-sm text-[var(--text-secondary)]">QQ群、飞书群、微信群都已开放，后续功能更新、模型问题和工作流模板会优先同步。</p>
+          <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p class="text-xs font-semibold text-[var(--accent-color)]">公告栏</p>
+              <h2 class="mt-1 text-lg font-semibold text-[var(--text-primary)]">加入 AIAIAI 工具箱交流群</h2>
+              <p class="mt-1 text-sm text-[var(--text-secondary)]">QQ群、飞书群、微信群都已开放，后续功能更新、模型问题和工作流模板会优先同步。</p>
+            </div>
+            <button
+              type="button"
+              @click="toggleCommunityNotice"
+              class="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] px-3 text-sm text-[var(--text-primary)] transition-colors hover:border-[var(--accent-color)]"
+              :aria-expanded="isCommunityNoticeExpanded"
+              aria-controls="community-groups"
+            >
+              <n-icon :size="16">
+                <ChevronUpOutline v-if="isCommunityNoticeExpanded" />
+                <ChevronDownOutline v-else />
+              </n-icon>
+              {{ isCommunityNoticeExpanded ? '收起' : '展开' }}
+            </button>
           </div>
-          <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div
+            v-if="isCommunityNoticeExpanded"
+            id="community-groups"
+            class="grid grid-cols-1 gap-4 md:grid-cols-3"
+          >
             <div
               v-for="group in communityGroups"
               :key="group.name"
@@ -254,7 +273,9 @@ import {
   SettingsOutline,
   TrashOutline,
   CloudUploadOutline,
-  DownloadOutline
+  DownloadOutline,
+  ChevronDownOutline,
+  ChevronUpOutline
 } from '@vicons/ionicons5'
 import { 
   projects, 
@@ -319,12 +340,17 @@ const handleThumbnailHover = (project, isHovering) => {
 // Input state | 输入状态
 const inputText = ref('')
 const selectedEcommercePromptId = ref('')
+const isCommunityNoticeExpanded = ref(true)
 
 const communityGroups = [
   { name: 'QQ群', note: '交流2群', image: qqGroupImage },
   { name: '飞书群', note: '长期有效', image: feishuGroupImage },
   { name: '微信群', note: '定期更新', image: wechatGroupImage }
 ]
+
+const toggleCommunityNotice = () => {
+  isCommunityNoticeExpanded.value = !isCommunityNoticeExpanded.value
+}
 
 // Rename modal state | 重命名弹窗状态
 const showRenameModal = ref(false)
