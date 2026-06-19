@@ -12,6 +12,14 @@
     <div class="flex items-center gap-4">
       <!-- Center slot | 中间插槽 -->
       <slot name="center"></slot>
+      <router-link
+        to="/assets"
+        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-color)] text-sm transition-colors"
+        title="我的素材库"
+      >
+        <n-icon :size="16"><ImageOutline /></n-icon>
+        我的素材
+      </router-link>
       <!-- 增加按钮跳转 https://api.aiaiai001.com/ -->
       <button 
         @click="openJimengAI" 
@@ -69,7 +77,8 @@ import { NIcon } from 'naive-ui'
 import { 
   SunnyOutline, 
   MoonOutline,
-  LogoGithub
+  LogoGithub,
+  ImageOutline
 } from '@vicons/ionicons5'
 import { isDark, toggleTheme } from '../stores/theme'
 

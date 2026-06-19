@@ -73,6 +73,34 @@
               </template>
               下载
             </n-tooltip>
+            <n-tooltip v-if="data.url" trigger="hover">
+              <template #trigger>
+                <button
+                  @click="handleSaveToMaterials"
+                  :disabled="assetSaving"
+                  class="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <n-icon :size="14">
+                    <BookmarkOutline />
+                  </n-icon>
+                </button>
+              </template>
+              保存到素材库
+            </n-tooltip>
+            <n-tooltip v-if="reloadableAssetId" trigger="hover">
+              <template #trigger>
+                <button
+                  @click="handleReloadFromAsset"
+                  :disabled="assetReloading"
+                  class="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <n-icon :size="14">
+                    <RefreshOutline />
+                  </n-icon>
+                </button>
+              </template>
+              重新加载已有结果
+            </n-tooltip>
             <n-tooltip trigger="hover">
               <template #trigger>
                 <button @click="handleDuplicate" class="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors">
@@ -98,6 +126,9 @@
         <!-- Model name | 模型名称 -->
         <div v-if="data.model" class="mt-1 text-xs text-[var(--text-secondary)] truncate">
           {{ data.model }}
+        </div>
+        <div v-if="assetStatusText" class="mt-1 text-[11px] text-[var(--text-secondary)] truncate">
+          {{ assetStatusText }}
         </div>
       </div>
 
@@ -326,9 +357,10 @@
 import { ref, nextTick, computed } from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import { NIcon, NTooltip, NSwitch, NImagePreview, NModal, NButton } from 'naive-ui'
-import { TrashOutline, ExpandOutline, ImageOutline, CloseCircleOutline, CopyOutline, VideocamOutline, DownloadOutline, EyeOutline, BrushOutline, RefreshOutline, ColorWandOutline, SwapHorizontalOutline } from '@vicons/ionicons5'
-import { updateNode, removeNode, duplicateNode, addNode, addEdge, nodes } from '../../stores/canvas'
+import { TrashOutline, ExpandOutline, ImageOutline, CloseCircleOutline, CopyOutline, VideocamOutline, DownloadOutline, EyeOutline, BrushOutline, RefreshOutline, ColorWandOutline, SwapHorizontalOutline, BookmarkOutline } from '@vicons/ionicons5'
+import { updateNode, removeNode, duplicateNode, addNode, addEdge, nodes, currentProjectId } from '../../stores/canvas'
 import NodeHandleMenu from './NodeHandleMenu.vue'
+import { saveAsset, reloadAsset } from '../../api/assets'
 
 const props = defineProps({
   id: String,
@@ -341,6 +373,8 @@ const { updateNodeInternals } = useVueFlow()
 // Hover state | 悬浮状态
 const showActions = ref(true)
 const showHandleMenu = ref(false)
+const assetSaving = ref(false)
+const assetReloading = ref(false)
 
 // Label editing state | Label 编辑状态
 const isEditingLabel = ref(false)
@@ -370,6 +404,20 @@ const maskData = ref(null)
 // Computed public props status | 计算是否公开
 const isPublic = computed(() => {
   return props.data?.publicProps?.name != null && props.data?.publicProps?.name !== ''
+})
+
+const reloadableAssetId = computed(() => {
+  return props.data?.savedAssetId || props.data?.temporaryAssetId || props.data?.assetId || ''
+})
+
+const assetStatusText = computed(() => {
+  if (props.data?.savedAssetId) {
+    return '已保存到素材库，普通用户默认保留24小时'
+  }
+  if (props.data?.temporaryAssetId) {
+    return '临时结果默认保留24小时，请及时下载或保存'
+  }
+  return ''
 })
 
 // Handle toggle public | 处理切换公开状态
@@ -783,6 +831,66 @@ const handleReplaceUrlSubmit = () => {
     window.$message?.error('图片加载失败，请检查地址是否正确')
   }
   img.src = url
+}
+
+const handleSaveToMaterials = async () => {
+  if (!props.data?.url) {
+    window.$message?.warning('当前图片节点没有图片')
+    return
+  }
+
+  assetSaving.value = true
+  try {
+    const { asset } = await saveAsset({
+      assetId: reloadableAssetId.value || undefined,
+      url: props.data.url,
+      title: props.data.label || '画布素材',
+      model: props.data.model || '',
+      projectId: currentProjectId.value,
+      nodeId: props.id
+    })
+
+    updateNode(props.id, {
+      url: asset.url,
+      savedAssetId: asset.id,
+      assetId: asset.id,
+      assetExpiresAt: asset.expiresAt,
+      updatedAt: Date.now()
+    })
+    window.$message?.success('已保存到素材库')
+  } catch (err) {
+    window.$message?.error(err.message || '保存素材失败')
+  } finally {
+    assetSaving.value = false
+  }
+}
+
+const handleReloadFromAsset = async () => {
+  const assetId = reloadableAssetId.value
+  if (!assetId) {
+    window.$message?.warning('当前图片没有可重新加载的素材记录')
+    return
+  }
+
+  assetReloading.value = true
+  try {
+    const { asset } = await reloadAsset(assetId)
+    updateNode(props.id, {
+      url: asset.url,
+      error: '',
+      loading: false,
+      assetId: asset.id,
+      temporaryAssetId: asset.type === 'temporary' ? asset.id : props.data?.temporaryAssetId || '',
+      savedAssetId: asset.type === 'saved' ? asset.id : props.data?.savedAssetId || '',
+      assetExpiresAt: asset.expiresAt,
+      updatedAt: Date.now()
+    })
+    window.$message?.success('已重新加载已有结果')
+  } catch (err) {
+    window.$message?.error(err.message || '重新加载失败')
+  } finally {
+    assetReloading.value = false
+  }
 }
 
 // Start editing label | 开始编辑 label
