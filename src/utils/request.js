@@ -5,9 +5,6 @@
 
 import axios from 'axios'
 
-// Base URL from environment or default
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.aiaiai001.com'
-
 // Create axios instance | 创建 axios 实例
 const instance = axios.create({
   baseURL: "/",
@@ -17,27 +14,6 @@ const instance = axios.create({
 // Request interceptor | 请求拦截器
 instance.interceptors.request.use(
   (config) => {
-    // Get current provider | 获取当前渠道
-    const currentProvider = localStorage.getItem('api-provider') || 'longcheng'
-
-    // Get API keys from new storage | 从新存储结构获取 API Keys
-    let apiKey = ''
-    try {
-      const apiKeysJson = localStorage.getItem('api-keys-by-provider')
-      const apiKeys = apiKeysJson ? JSON.parse(apiKeysJson) : {}
-      apiKey = apiKeys[currentProvider] || ''
-    } catch (e) {
-      apiKey = ''
-    }
-
-    // Skip auth for certain endpoints | 跳过某些端点的认证
-    const noAuthEndpoints = ['/model/page', '/model/fullName', '/model/types']
-    const isNoAuth = noAuthEndpoints.some(ep => config.url?.includes(ep))
-
-    if (apiKey && !isNoAuth) {
-      config.headers['Authorization'] = `Bearer ${apiKey}`
-    }
-
     return config
   },
   (error) => {

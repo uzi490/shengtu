@@ -102,13 +102,12 @@ export const useChat = (options = {}) => {
         let fullResponse = ''
 
         // 使用 modelStore 获取完整 URL
-        const chatUrl = modelStore.getChatEndpoint()
-        const endpoint = new URL(chatUrl).pathname
+        const chatUrl = new URL(modelStore.getChatEndpoint(), window.location.origin)
 
         for await (const chunk of streamChatCompletions(
           adaptedParams,
           abortController.signal,
-          { baseUrl: new URL(chatUrl).origin, endpoint, apiKey: modelStore.currentApiKey }
+          { baseUrl: chatUrl.origin, endpoint: chatUrl.pathname }
         )) {
           fullResponse += chunk
           currentResponse.value = fullResponse

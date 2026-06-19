@@ -10,6 +10,8 @@ const dataDir = path.resolve(process.env.ASSET_DATA_DIR || path.join(rootDir, '.
 const uploadsDir = path.join(dataDir, 'uploads')
 const dbPath = path.join(dataDir, 'assets.json')
 const port = Number(process.env.PORT || 8080)
+const upstreamApiBaseUrl = normalizeBaseUrl(process.env.CANVAS_UPSTREAM_API_BASE_URL || 'http://127.0.0.1:3000')
+const upstreamApiKey = process.env.CANVAS_UPSTREAM_API_KEY || ''
 
 const NORMAL_LIMIT_COUNT = Number(process.env.ASSET_LIMIT_COUNT || 50)
 const NORMAL_LIMIT_BYTES = Number(process.env.ASSET_LIMIT_BYTES || 500 * 1024 * 1024)
@@ -43,6 +45,11 @@ const server = http.createServer(async (req, res) => {
       return
     }
 
+    if (requestUrl.pathname.startsWith('/api/ai/')) {
+      await handleAiProxy(req, res, requestUrl)
+      return
+    }
+
     if (requestUrl.pathname.startsWith('/uploads/')) {
       await serveUpload(requestUrl.pathname, res)
       return
@@ -69,6 +76,69 @@ async function ensureStorage() {
   await fs.mkdir(uploadsDir, { recursive: true })
   if (!existsSync(dbPath)) {
     await writeDb({ assets: [] })
+  }
+}
+
+async function handleAiProxy(req, res, requestUrl) {
+  if (!upstreamApiKey) {
+    sendJson(res, 503, { error: 'AI 服务未配置，请联系管理员' })
+    return
+  }
+
+  if (!['GET', 'POST'].includes(req.method || '')) {
+    sendJson(res, 405, { error: '不支持的请求方法' })
+    return
+  }
+
+  const upstreamPath = requestUrl.pathname.replace(/^\/api\/ai/, '') || '/'
+  const upstreamUrl = new URL(`${upstreamApiBaseUrl}${upstreamPath}`)
+  upstreamUrl.search = requestUrl.search
+
+  const headers = {
+    'Authorization': `Bearer ${upstreamApiKey}`,
+    'Accept': req.headers.accept || 'application/json'
+  }
+
+  let body
+  if (req.method !== 'GET') {
+    const rawBody = await readRawBody(req)
+    body = rawBody.length > 0 ? rawBody : undefined
+    headers['Content-Type'] = req.headers['content-type'] || 'application/json'
+  }
+
+  const upstreamResponse = await fetch(upstreamUrl, {
+    method: req.method,
+    headers,
+    body,
+    redirect: 'follow'
+  })
+
+  const contentType = upstreamResponse.headers.get('content-type') || 'application/json; charset=utf-8'
+  const responseHeaders = {
+    'content-type': contentType,
+    'cache-control': 'no-cache'
+  }
+
+  if (contentType.includes('text/event-stream')) {
+    responseHeaders['connection'] = 'keep-alive'
+    responseHeaders['x-accel-buffering'] = 'no'
+  }
+
+  res.writeHead(upstreamResponse.status, responseHeaders)
+
+  if (!upstreamResponse.body) {
+    res.end()
+    return
+  }
+
+  try {
+    for await (const chunk of upstreamResponse.body) {
+      res.write(chunk)
+    }
+    res.end()
+  } catch (error) {
+    console.error('[ai-proxy] upstream stream failed', error)
+    res.destroy(error)
   }
 }
 
@@ -505,6 +575,17 @@ function addHours(date, hours) {
 }
 
 async function readJsonBody(req) {
+  const buffer = await readRawBody(req)
+  if (buffer.length === 0) return {}
+
+  try {
+    return JSON.parse(buffer.toString('utf8'))
+  } catch {
+    throw new HttpError(400, '请求 JSON 格式不正确')
+  }
+}
+
+async function readRawBody(req) {
   const chunks = []
   let total = 0
 
@@ -516,13 +597,11 @@ async function readJsonBody(req) {
     chunks.push(chunk)
   }
 
-  if (chunks.length === 0) return {}
+  return Buffer.concat(chunks)
+}
 
-  try {
-    return JSON.parse(Buffer.concat(chunks).toString('utf8'))
-  } catch {
-    throw new HttpError(400, '请求 JSON 格式不正确')
-  }
+function normalizeBaseUrl(url) {
+  return String(url || '').replace(/\/+$/, '')
 }
 
 function sendJson(res, statusCode, payload) {

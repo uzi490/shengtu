@@ -16,21 +16,23 @@
           <n-form-item label="Base URL" path="baseUrl">
             <n-input
               v-model:value="formData.baseUrl"
-              placeholder="https://api.aiaiai001.com"
+              placeholder="/api/ai"
               readonly
               disabled
             />
             <template #feedback>
-              <span class="text-xs text-[var(--text-secondary)]">已锁定为 AIAIAI API 域名，用户只需要填写自己的 API Key。</span>
+              <span class="text-xs text-[var(--text-secondary)]">已锁定为本站后端代理，浏览器不会保存或暴露生产 API Key。</span>
             </template>
           </n-form-item>
-          <n-form-item label="API Key" path="apiKey">
+          <n-form-item label="API Key">
             <n-input
-              v-model:value="formData.apiKey"
-              type="password"
-              show-password-on="click"
-              placeholder="请输入 API Key"
+              value="由服务器托管"
+              readonly
+              disabled
             />
+            <template #feedback>
+              <span class="text-xs text-[var(--text-secondary)]">当前站点使用服务器环境变量中的 AIAIAI Key，普通用户无需填写。</span>
+            </template>
           </n-form-item>
 
           <n-divider title-placement="left" class="!my-3">
@@ -56,22 +58,8 @@
             </div>
           </div>
 
-          <n-alert v-if="!isConfigured" type="warning" title="未配置" class="mb-4">
-            <div class="flex flex-col gap-2">
-              <p>请配置 API Key 以使用 AI 功能</p>
-              <a
-                href="https://api.aiaiai001.com/register"
-                target="_blank"
-                class="text-[var(--accent-color)] hover:underline text-sm flex items-center gap-1"
-              >
-                🔗 点击获取 API Key
-                <span class="text-xs">（新用户注册）</span>
-              </a>
-            </div>
-          </n-alert>
-
-          <n-alert v-else type="success" title="已配置" class="mb-4">
-            API 已就绪，可以使用 AI 功能
+          <n-alert type="success" title="服务端托管" class="mb-4">
+            AI 服务由本站后端代理，用户浏览器不会直接接触生产 API Key。
           </n-alert>
         </n-form>
       </n-tab-pane>
@@ -177,13 +165,7 @@
 
     <template #footer>
       <div class="flex justify-between items-center">
-        <a
-          href="https://api.aiaiai001.com/register"
-          target="_blank"
-          class="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors"
-        >
-          没有 API Key？点击注册
-        </a>
+        <span class="text-xs text-[var(--text-secondary)]">生产 Key 由服务器托管</span>
         <div class="flex gap-2">
           <n-button @click="handleClear" tertiary>清除配置</n-button>
           <n-button @click="showModal = false">取消</n-button>
@@ -216,7 +198,7 @@ const props = defineProps({
 const emit = defineEmits(['update:show', 'saved'])
 
 // API Config 状态
-const isConfigured = computed(() => !!modelStore.currentApiKey)
+const isConfigured = computed(() => true)
 
 // Model Store (Pinia) | 模型配置 Store
 const modelStore = useModelStore()
@@ -261,7 +243,7 @@ const newVideoModel = ref('')
 // 初始化或切换渠道时，更新 API 配置
 const updateFormApiConfig = () => {
   const provider = LOCKED_PROVIDER
-  formData.apiKey = modelStore.apiKeysByProvider[provider] || ''
+  formData.apiKey = ''
   formData.provider = LOCKED_PROVIDER
   formData.baseUrl = LOCKED_API_BASE_URL
 }
@@ -323,9 +305,6 @@ const handleRemoveVideoModel = (modelKey) => {
 // Handle save | 处理保存
 const handleSave = () => {
   modelStore.setProvider(LOCKED_PROVIDER)
-  if (formData.apiKey) {
-    modelStore.setApiKeyByProvider(LOCKED_PROVIDER, formData.apiKey)
-  }
   modelStore.setBaseUrlByProvider(LOCKED_PROVIDER, LOCKED_API_BASE_URL)
   showModal.value = false
   emit('saved')

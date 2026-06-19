@@ -2,7 +2,7 @@
  * Chat API | 对话 API
  */
 
-import { request, getBaseUrl } from '@/utils'
+import { request } from '@/utils'
 
 // 对话补全
 export const chatCompletions = (data) =>
@@ -14,18 +14,13 @@ export const chatCompletions = (data) =>
 
 // 流式对话补全
 export const streamChatCompletions = async function* (data, signal, options = {}) {
-  // 优先使用 options.apiKey（来自 modelStore），其次使用 localStorage 中的全局 apiKey
-  const apiKey = options.apiKey || localStorage.getItem('apiKey') || ''
-  // 优先使用传入的 baseUrl，否则使用默认的
-  const baseUrl = options.baseUrl || getBaseUrl()
-  // 使用 options.endpoint 或默认的 /chat/completions
+  const baseUrl = options.baseUrl || '/api/ai'
   const endpoint = options.endpoint || '/chat/completions'
 
   const response = await fetch(`${baseUrl}${endpoint}`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({ ...data, stream: true }),
     signal

@@ -4,7 +4,7 @@
  */
 
 export const LOCKED_PROVIDER = 'longcheng'
-export const LOCKED_API_BASE_URL = 'https://api.aiaiai001.com'
+export const LOCKED_API_BASE_URL = '/api/ai'
 
 // 渠道适配配置
 export const PROVIDERS = {
