@@ -9,7 +9,7 @@ export const LOCKED_API_BASE_URL = 'https://api.aiaiai001.com'
 // 渠道适配配置
 export const PROVIDERS = {
   longcheng: {
-    label: '龙城 (Longcheng)',
+    label: 'AIAIAI工具箱',
     defaultBaseUrl: LOCKED_API_BASE_URL,
     // 端点路径
     endpoints: {
@@ -20,7 +20,7 @@ export const PROVIDERS = {
       // Gemini 生图专用端点
       geminiImage: '/v1beta/models/{model}:generateContent'
     },
-    // 龙城路由请求适配
+    // AIAIAI 路由请求适配
     requestAdapter: {
       chat: (params) => {
         const adapted = {
@@ -237,7 +237,7 @@ export const PROVIDERS = {
         return adapted
       }
     },
-    // 龙城路由响应格式
+    // AIAIAI 路由响应格式
     responseAdapter: {
       chat: (response) => {
         if (response.choices && response.choices.length > 0) {
@@ -546,7 +546,7 @@ export const PROVIDERS = {
 
   // 百度 ERNIE-Image 模型渠道
   baidu: {
-    label: '龙城 (ERNIE-Image)',
+    label: 'AIAIAI (ERNIE-Image)',
     defaultBaseUrl: 'https://api.aiaiai001.com',
     endpoints: {
       image: '/v1/images/generations'
@@ -718,7 +718,7 @@ export const PROVIDERS = {
     }
   },
 
-  // 默认使用龙城格式
+  // 默认使用 AIAIAI 格式
   default: 'longcheng'
 }
 

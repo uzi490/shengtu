@@ -16,12 +16,32 @@
     </AppHeader>
 
     <!-- Main content | 主要内容 -->
-    <main class="max-w-5xl mx-auto px-4 py-8 md:py-16">
+    <main class="max-w-6xl mx-auto px-4 py-6 md:py-10">
+      <section class="mb-8 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] p-5 shadow-sm">
+        <div class="flex flex-col gap-5">
+          <div>
+            <p class="text-xs font-semibold text-[var(--accent-color)]">公告栏</p>
+            <h2 class="mt-1 text-lg font-semibold text-[var(--text-primary)]">加入 AIAIAI 工具箱交流群</h2>
+            <p class="mt-1 text-sm text-[var(--text-secondary)]">QQ群、飞书群、微信群都已开放，后续功能更新、模型问题和工作流模板会优先同步。</p>
+          </div>
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div
+              v-for="group in communityGroups"
+              :key="group.name"
+              class="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-3 text-center"
+            >
+              <img :src="group.image" :alt="group.name" class="mx-auto aspect-square w-full max-w-[260px] rounded-md bg-white object-contain" />
+              <p class="mt-2 text-sm font-medium text-[var(--text-primary)]">{{ group.name }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Welcome section | 欢迎区域 -->
       <section class="text-center mb-12">
-        <div class="flex items-center justify-center gap-4 mb-8">
-          <img src="../assets/logo.png" alt="Logo" class="w-12 h-12 md:w-16 md:h-16" />
-          <h1 class="text-2xl md:text-4xl font-bold text-[var(--text-primary)]">欢迎来到龙城无限画布</h1>
+        <div class="flex flex-col items-center justify-center gap-4 mb-8 md:flex-row">
+          <img src="../assets/logo.png" alt="AIAIAI工具箱" class="w-24 h-24 md:w-32 md:h-32 object-contain" />
+          <h1 class="text-2xl md:text-4xl font-bold text-[var(--text-primary)]">欢迎来到AIAIAI工具箱的无限画布工坊</h1>
         </div>
         
         <!-- Input area | 输入区域 -->
@@ -29,9 +49,10 @@
           <div class="bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] p-4 shadow-sm">
             <textarea
               v-model="inputText"
-              placeholder="输入你的创意，开始新项目"
+              placeholder="输入你的创意，开始新工作流"
               class="w-full bg-transparent resize-none outline-none text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] min-h-[80px]"
               @keydown.enter.ctrl="handleCreateWithInput"
+              @input="selectedEcommercePromptId = ''"
             />
             <div class="flex items-center justify-between mt-2">
               <div class="flex items-center gap-2">
@@ -55,14 +76,14 @@
           
           <!-- Quick suggestions | 快捷建议 -->
           <div class="flex flex-wrap items-center justify-center gap-2 mt-4">
-            <span class="text-sm text-[var(--text-secondary)]">推荐：</span>
+            <span class="text-sm text-[var(--text-secondary)]">电商工作流推荐：</span>
             <button 
               v-for="tag in suggestions" 
-              :key="tag"
-              @click="inputText = tag"
+              :key="tag.id"
+              @click="selectEcommerceSuggestion(tag)"
               class="px-3 py-1.5 text-sm rounded-full bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:border-[var(--accent-color)] transition-colors"
             >
-              {{ tag }}
+              {{ tag.name }}：{{ tag.description }}
             </button>
             <button class="p-1.5 hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors">
               <n-icon :size="16"><RefreshOutline /></n-icon>
@@ -74,21 +95,21 @@
       <!-- My projects section | 我的项目区域 -->
       <section ref="projectsSection">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-[var(--text-primary)]">我的项目</h2>
+          <h2 class="text-lg font-semibold text-[var(--text-primary)]">我的工作流</h2>
           <div class="flex items-center gap-2">
             <button 
               @click="triggerImport"
               class="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-color)] transition-colors"
             >
               <n-icon :size="16"><CloudUploadOutline /></n-icon>
-              导入项目
+              导入工作流
             </button>
             <button 
               @click="createNewProject"
               class="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white transition-colors"
             >
               <n-icon :size="16"><AddOutline /></n-icon>
-              新建项目
+              新建工作流
             </button>
           </div>
         </div>
@@ -96,12 +117,12 @@
         <!-- Empty state | 空状态 -->
         <div v-if="projects.length === 0" class="text-center py-12 bg-[var(--bg-secondary)] rounded-xl border border-dashed border-[var(--border-color)]">
           <n-icon :size="48" class="text-[var(--text-secondary)] mb-4"><FolderOutline /></n-icon>
-          <p class="text-[var(--text-secondary)] mb-4">还没有项目，创建一个开始吧</p>
+          <p class="text-[var(--text-secondary)] mb-4">还没有工作流，创建一个开始吧</p>
           <button 
             @click="createNewProject"
             class="px-4 py-2 text-sm rounded-lg bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white transition-colors"
           >
-            创建第一个项目
+            创建第一个工作流
           </button>
         </div>
         
@@ -148,7 +169,7 @@
                 
                 <!-- Hover overlay | 悬浮遮罩 -->
                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span class="text-white text-sm">打开项目</span>
+                  <span class="text-white text-sm">打开工作流</span>
                 </div>
               </div>
               <p class="text-sm text-[var(--text-primary)] truncate">{{ project.name }}</p>
@@ -176,14 +197,14 @@
       <button 
         @click="createNewProject"
         class="p-2 hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors"
-        title="新建项目"
+        title="新建工作流"
       >
         <n-icon :size="20"><DocumentOutline /></n-icon>
       </button>
       <button 
         @click="scrollToProjects"
         class="p-2 hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors"
-        title="我的项目"
+        title="我的工作流"
       >
         <n-icon :size="20"><FolderOutline /></n-icon>
       </button>
@@ -193,8 +214,8 @@
     <ApiSettings v-model:show="showApiSettings" @saved="refreshApiConfig" />
 
     <!-- Rename modal | 重命名弹窗 -->
-    <n-modal v-model:show="showRenameModal" preset="dialog" title="重命名项目">
-      <n-input v-model:value="renameValue" placeholder="请输入项目名称" />
+    <n-modal v-model:show="showRenameModal" preset="dialog" title="重命名工作流">
+      <n-input v-model:value="renameValue" placeholder="请输入工作流名称" />
       <template #action>
         <n-button @click="showRenameModal = false">取消</n-button>
         <n-button type="primary" @click="confirmRename">确定</n-button>
@@ -248,6 +269,10 @@ import {
 import { useModelStore } from '../stores/pinia'
 import ApiSettings from '../components/ApiSettings.vue'
 import AppHeader from '../components/AppHeader.vue'
+import feishuGroupImage from '../assets/feishu-group.png'
+import qqGroupImage from '../assets/qq-group.png'
+import wechatGroupImage from '../assets/wechat-group.png'
+import { ECOMMERCE_PROMPTS } from '../config/ecommercePrompts'
 
 const router = useRouter()
 const dialog = useDialog()
@@ -293,6 +318,13 @@ const handleThumbnailHover = (project, isHovering) => {
 
 // Input state | 输入状态
 const inputText = ref('')
+const selectedEcommercePromptId = ref('')
+
+const communityGroups = [
+  { name: 'QQ群', note: '交流2群', image: qqGroupImage },
+  { name: '飞书群', note: '长期有效', image: feishuGroupImage },
+  { name: '微信群', note: '定期更新', image: wechatGroupImage }
+]
 
 // Rename modal state | 重命名弹窗状态
 const showRenameModal = ref(false)
@@ -300,12 +332,12 @@ const renameValue = ref('')
 const renameTargetId = ref(null)
 
 // Suggestions tags | 建议标签
-const suggestions = [
-  '雨中魔法森林',
-  '日式街面美食摄影',
-  '瀑布水流飞溅',
-  '雨天富声旁边花语'
-]
+const suggestions = ECOMMERCE_PROMPTS.slice(0, 5)
+
+const selectEcommerceSuggestion = (template) => {
+  selectedEcommercePromptId.value = template.id
+  inputText.value = template.prompt
+}
 
 // Format date | 格式化日期
 const formatDate = (date) => {
@@ -341,7 +373,7 @@ const handleProjectAction = (key, project) => {
     case 'export':
       try {
         exportProject(project.id)
-        window.$message?.success('项目已导出')
+        window.$message?.success('工作流已导出')
       } catch (err) {
         window.$message?.error(err.message || '导出失败')
       }
@@ -354,18 +386,18 @@ const handleProjectAction = (key, project) => {
     case 'duplicate':
       const newId = duplicateProject(project.id)
       if (newId) {
-        window.$message?.success('项目已复制')
+        window.$message?.success('工作流已复制')
       }
       break
     case 'delete':
       dialog.warning({
-        title: '删除项目',
-        content: `确定要删除项目「${project.name}」吗？此操作不可恢复。`,
+        title: '删除工作流',
+        content: `确定要删除工作流「${project.name}」吗？此操作不可恢复。`,
         positiveText: '删除',
         negativeText: '取消',
         onPositiveClick: () => {
           deleteProject(project.id)
-          window.$message?.success('项目已删除')
+          window.$message?.success('工作流已删除')
         }
       })
       break
@@ -389,7 +421,7 @@ const checkApiKeyAndNavigate = (callback) => {
   if (!isApiConfigured.value) {
     dialog.warning({
       title: '未配置 API Key',
-      content: '请先在设置中配置 API Key 才能使用画布功能。',
+      content: '请先在设置中配置 API Key 才能使用画布工坊。',
       positiveText: '知道了'
     })
     return false
@@ -398,27 +430,34 @@ const checkApiKeyAndNavigate = (callback) => {
   return true
 }
 
-// Create new project | 创建新项目
+// Create new workflow | 创建新工作流
 const createNewProject = () => {
   checkApiKeyAndNavigate(() => {
-    const id = createProject('未命名项目')
+    const id = createProject('未命名工作流')
     router.push(`/canvas/${id}`)
   })
 }
 
-// Create project with input text | 使用输入文本创建项目
+// Create workflow with input text | 使用输入文本创建工作流
 const handleCreateWithInput = () => {
   checkApiKeyAndNavigate(() => {
-    const name = inputText.value.trim() || '未命名项目'
+    const selectedTemplate = ECOMMERCE_PROMPTS.find(item => item.id === selectedEcommercePromptId.value)
+    const name = selectedTemplate?.name || inputText.value.trim() || '未命名工作流'
     const id = createProject(name)
     // Store the input text to be used as initial prompt
     sessionStorage.setItem('ai-canvas-initial-prompt', inputText.value.trim())
+    if (selectedTemplate) {
+      sessionStorage.setItem('ai-canvas-ecommerce-prompt-id', selectedTemplate.id)
+    } else {
+      sessionStorage.removeItem('ai-canvas-ecommerce-prompt-id')
+    }
     inputText.value = ''
+    selectedEcommercePromptId.value = ''
     router.push(`/canvas/${id}`)
   })
 }
 
-// Open existing project | 打开已有项目
+// Open existing workflow | 打开已有工作流
 const openProject = (project) => {
   checkApiKeyAndNavigate(() => {
     router.push(`/canvas/${project.id}`)
@@ -454,7 +493,7 @@ const handleFileImport = async (event) => {
   try {
     const { id, name } = await importProject(file)
     window.$message?.success(`「${name}」导入成功`)
-    // 自动打开导入的项目
+    // 自动打开导入的工作流
     router.push(`/canvas/${id}`)
   } catch (err) {
     window.$message?.error(err.message || '导入失败')

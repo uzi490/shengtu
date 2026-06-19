@@ -21,7 +21,7 @@
               disabled
             />
             <template #feedback>
-              <span class="text-xs text-[var(--text-secondary)]">已锁定为龙城 API 域名，用户只需要填写自己的 API Key。</span>
+              <span class="text-xs text-[var(--text-secondary)]">已锁定为 AIAIAI API 域名，用户只需要填写自己的 API Key。</span>
             </template>
           </n-form-item>
           <n-form-item label="API Key" path="apiKey">
@@ -60,7 +60,7 @@
             <div class="flex flex-col gap-2">
               <p>请配置 API Key 以使用 AI 功能</p>
               <a
-                href="https://api.aiaiai001.com/login"
+                href="https://api.aiaiai001.com/register"
                 target="_blank"
                 class="text-[var(--accent-color)] hover:underline text-sm flex items-center gap-1"
               >
@@ -178,7 +178,7 @@
     <template #footer>
       <div class="flex justify-between items-center">
         <a
-          href="https://api.aiaiai001.com/login"
+          href="https://api.aiaiai001.com/register"
           target="_blank"
           class="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-color)] transition-colors"
         >

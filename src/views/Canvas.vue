@@ -285,6 +285,7 @@ import ApiSettings from '../components/ApiSettings.vue'
 import DownloadModal from '../components/DownloadModal.vue'
 import WorkflowPanel from '../components/WorkflowPanel.vue'
 import AppHeader from '../components/AppHeader.vue'
+import { ECOMMERCE_PROMPTS, createEcommercePromptWorkflow } from '../config/ecommercePrompts'
 
 // API Config state | API 配置状态
 const modelStore = useModelStore()
@@ -471,6 +472,12 @@ const handleAddWorkflow = ({ workflow, options }) => {
 
   // Create nodes from workflow template | 从工作流模板创建节点
   const startPosition = { x: viewportCenterX - 300, y: viewportCenterY - 200 }
+  addWorkflowToCanvas(workflow, startPosition, options)
+
+  window.$message?.success(`已添加工作流: ${workflow.name}`)
+}
+
+const addWorkflowToCanvas = (workflow, startPosition, options = {}) => {
   const { nodes: newNodes, edges: newEdges } = workflow.createNodes(startPosition, options)
 
   // Start batch operation manually | 手动开始批量操作
@@ -514,7 +521,7 @@ const handleAddWorkflow = ({ workflow, options }) => {
     })
   }, 100)
 
-  window.$message?.success(`已添加工作流: ${workflow.name}`)
+  return nodeIds
 }
 
 // Handle connection | 处理连接
@@ -842,8 +849,18 @@ onMounted(() => {
   loadProjectById(route.params.id)
   
   // Check for initial prompt from home page | 检查来自首页的初始提示词
+  const ecommercePromptId = sessionStorage.getItem('ai-canvas-ecommerce-prompt-id')
   const initialPrompt = sessionStorage.getItem('ai-canvas-initial-prompt')
-  if (initialPrompt) {
+  if (ecommercePromptId) {
+    sessionStorage.removeItem('ai-canvas-ecommerce-prompt-id')
+    sessionStorage.removeItem('ai-canvas-initial-prompt')
+    const template = ECOMMERCE_PROMPTS.find(item => item.id === ecommercePromptId)
+    if (template) {
+      const workflow = createEcommercePromptWorkflow(template)
+      addWorkflowToCanvas(workflow, { x: 100, y: 120 })
+      window.$message?.success(`已生成电商工作流: ${template.name}`)
+    }
+  } else if (initialPrompt) {
     sessionStorage.removeItem('ai-canvas-initial-prompt')
     chatInput.value = initialPrompt
     // Auto-send the message | 自动发送消息
