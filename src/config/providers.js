@@ -3,11 +3,14 @@
  * 适配不同 API 提供商的请求参数和响应格式
  */
 
+export const LOCKED_PROVIDER = 'longcheng'
+export const LOCKED_API_BASE_URL = 'https://api.aiaiai001.com'
+
 // 渠道适配配置
 export const PROVIDERS = {
   longcheng: {
     label: '龙城 (Longcheng)',
-    defaultBaseUrl: 'https://api.aiaiai001.com',
+    defaultBaseUrl: LOCKED_API_BASE_URL,
     // 端点路径
     endpoints: {
       chat: '/v1/chat/completions',
@@ -734,13 +737,12 @@ export const MINIMAX_BASE_URL = 'https://api.minimaxi.com'
 
 // 获取默认渠道
 export const getDefaultProvider = () => {
-  return PROVIDERS.default || 'longcheng'
+  return LOCKED_PROVIDER
 }
 
 // 获取渠道的默认 Base URL
 export const getDefaultBaseUrl = (providerKey) => {
-  const config = getProviderConfig(providerKey)
-  return config.defaultBaseUrl || ''
+  return LOCKED_API_BASE_URL
 }
 
 // 获取渠道配置

@@ -10,13 +10,19 @@
               v-model:value="formData.provider"
               :options="providerOptions"
               placeholder="选择 API 渠道"
+              disabled
             />
           </n-form-item>
           <n-form-item label="Base URL" path="baseUrl">
             <n-input
               v-model:value="formData.baseUrl"
-              placeholder="https://api.aiaiai001.com/v1"
+              placeholder="https://api.aiaiai001.com"
+              readonly
+              disabled
             />
+            <template #feedback>
+              <span class="text-xs text-[var(--text-secondary)]">已锁定为龙城 API 域名，用户只需要填写自己的 API Key。</span>
+            </template>
           </n-form-item>
           <n-form-item label="API Key" path="apiKey">
             <n-input
@@ -196,7 +202,7 @@
 import { ref, reactive, watch, computed } from 'vue'
 import { NModal, NForm, NFormItem, NInput, NButton, NAlert, NDivider, NTag, NTabs, NTabPane, NSelect } from 'naive-ui'
 import { useModelStore } from '../stores/pinia'
-import { getProviderConfig } from '../config/providers'
+import { getProviderConfig, LOCKED_PROVIDER, LOCKED_API_BASE_URL } from '../config/providers'
 
 // Props | 属性
 const props = defineProps({
@@ -242,9 +248,9 @@ const showModal = ref(props.show)
 
 // Form data | 表单数据
 const formData = reactive({
-  provider: modelStore.currentProvider,
+  provider: LOCKED_PROVIDER,
   apiKey: '',
-  baseUrl: ''
+  baseUrl: LOCKED_API_BASE_URL
 })
 
 // New model inputs | 新模型输入
@@ -254,17 +260,17 @@ const newVideoModel = ref('')
 
 // 初始化或切换渠道时，更新 API 配置
 const updateFormApiConfig = () => {
-  const provider = formData.provider
-  const config = getProviderConfig(provider)
+  const provider = LOCKED_PROVIDER
   formData.apiKey = modelStore.apiKeysByProvider[provider] || ''
-  formData.baseUrl = modelStore.baseUrlsByProvider[provider] || config.defaultBaseUrl || ''
+  formData.provider = LOCKED_PROVIDER
+  formData.baseUrl = LOCKED_API_BASE_URL
 }
 
 // Watch prop changes | 监听属性变化
 watch(() => props.show, (val) => {
   showModal.value = val
   if (val) {
-    formData.provider = modelStore.currentProvider
+    formData.provider = LOCKED_PROVIDER
     updateFormApiConfig()
   }
 })
@@ -316,25 +322,22 @@ const handleRemoveVideoModel = (modelKey) => {
 
 // Handle save | 处理保存
 const handleSave = () => {
-  if (formData.provider) {
-    modelStore.setProvider(formData.provider)
-  }
+  modelStore.setProvider(LOCKED_PROVIDER)
   if (formData.apiKey) {
-    modelStore.setApiKeyByProvider(formData.provider, formData.apiKey)
+    modelStore.setApiKeyByProvider(LOCKED_PROVIDER, formData.apiKey)
   }
-  if (formData.baseUrl) {
-    modelStore.setBaseUrlByProvider(formData.provider, formData.baseUrl)
-  }
+  modelStore.setBaseUrlByProvider(LOCKED_PROVIDER, LOCKED_API_BASE_URL)
   showModal.value = false
   emit('saved')
 }
 
 // Handle clear | 处理清除
 const handleClear = () => {
-  modelStore.clearApiConfigByProvider(formData.provider)
+  modelStore.clearApiConfigByProvider(LOCKED_PROVIDER)
   modelStore.clearCustomModels()
   formData.apiKey = ''
-  formData.baseUrl = ''
+  formData.provider = LOCKED_PROVIDER
+  formData.baseUrl = LOCKED_API_BASE_URL
 }
 </script>
 

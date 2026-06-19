@@ -13,7 +13,7 @@ import {
   DEFAULT_IMAGE_MODEL,
   DEFAULT_VIDEO_MODEL
 } from '@/config/models'
-import { PROVIDERS, getProviderList, getDefaultProvider, getProviderConfig, getDefaultBaseUrl } from '@/config/providers'
+import { getProviderList, getProviderConfig, LOCKED_PROVIDER, LOCKED_API_BASE_URL } from '@/config/providers'
 
 // 存储键名
 const STORAGE_KEYS = {
@@ -94,10 +94,10 @@ export const useModelStore = defineStore('model', () => {
   // ============ Provider 状态 | Provider State ============
 
   // 当前选中的渠道
-  const currentProvider = ref(getStored(STORAGE_KEYS.PROVIDER) || getDefaultProvider())
+  const currentProvider = ref(LOCKED_PROVIDER)
 
   // 渠道列表
-  const providerList = computed(() => getProviderList())
+  const providerList = computed(() => getProviderList().filter(provider => provider.key === LOCKED_PROVIDER))
 
   // 当前渠道配置
   const providerConfig = computed(() => getProviderConfig(currentProvider.value))
@@ -107,16 +107,14 @@ export const useModelStore = defineStore('model', () => {
 
   // 设置当前渠道
   const setProvider = (provider) => {
-    if (PROVIDERS[provider]) {
-      currentProvider.value = provider
-      setStored(STORAGE_KEYS.PROVIDER, provider)
-    }
+    currentProvider.value = LOCKED_PROVIDER
+    setStored(STORAGE_KEYS.PROVIDER, LOCKED_PROVIDER)
   }
 
   // 清除渠道配置
   const clearProvider = () => {
-    currentProvider.value = getDefaultProvider()
-    removeStored(STORAGE_KEYS.PROVIDER)
+    currentProvider.value = LOCKED_PROVIDER
+    setStored(STORAGE_KEYS.PROVIDER, LOCKED_PROVIDER)
   }
 
   // 适配请求参数
@@ -160,7 +158,7 @@ export const useModelStore = defineStore('model', () => {
 
   // 当前渠道的 API Key 和 Base URL
   const currentApiKey = computed(() => apiKeysByProvider.value[currentProvider.value] || '')
-  const currentBaseUrl = computed(() => baseUrlsByProvider.value[currentProvider.value] || getDefaultBaseUrl(currentProvider.value))
+  const currentBaseUrl = computed(() => LOCKED_API_BASE_URL)
 
   // 设置指定渠道的 API Key
   const setApiKeyByProvider = (provider, apiKey) => {
@@ -169,13 +167,13 @@ export const useModelStore = defineStore('model', () => {
 
   // 设置指定渠道的 Base URL
   const setBaseUrlByProvider = (provider, baseUrl) => {
-    baseUrlsByProvider.value[provider] = baseUrl
+    baseUrlsByProvider.value[LOCKED_PROVIDER] = LOCKED_API_BASE_URL
   }
 
   // 清除指定渠道的 API 配置
   const clearApiConfigByProvider = (provider) => {
-    delete apiKeysByProvider.value[provider]
-    delete baseUrlsByProvider.value[provider]
+    delete apiKeysByProvider.value[LOCKED_PROVIDER]
+    baseUrlsByProvider.value[LOCKED_PROVIDER] = LOCKED_API_BASE_URL
   }
 
   // ============ Computed: All Models (built-in + custom + by provider) ============
