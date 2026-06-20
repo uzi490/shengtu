@@ -76,10 +76,10 @@ instance.interceptors.response.use(
     
     if (response) {
       const { status, data } = response
-      const message = data?.message || data?.error?.message || error.message
+      const message = data?.message || data?.error?.message || (typeof data?.error === 'string' ? data.error : '') || error.message
       
       if (status === 401) {
-        window.$message?.error('API Key 无效或已过期')
+        window.$message?.error('API Key 无效、已过期，或没有当前模型权限')
       } else if (status === 429) {
         window.$message?.error('请求过于频繁，请稍后再试')
       } else {

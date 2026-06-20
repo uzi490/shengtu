@@ -300,13 +300,11 @@ onMounted(() => {
 const CHAT_TEMPLATES = {
   imagePrompt: {
     name: '生图提示词',
-    systemPrompt: '你是一个专业的AI绘画提示词专家。识别用户描述的核心元素（人物、动作、场景、风格），并补充专业的生图要素：光照、构图、细节、质感、情绪氛围。只输出优化后的提示词，不要其他内容。如果用户描述过于简单，默认使用写实摄影风格。',
-    model: 'gpt-5.5'
+    systemPrompt: '你是一个专业的AI绘画提示词专家。识别用户描述的核心元素（人物、动作、场景、风格），并补充专业的生图要素：光照、构图、细节、质感、情绪氛围。只输出优化后的提示词，不要其他内容。如果用户描述过于简单，默认使用写实摄影风格。'
   },
   videoPrompt: {
     name: '视频提示词',
-    systemPrompt: '你是一个专业的AI视频提示词专家。将用户输入的内容美化成高质量的视频生成提示词，包含运动、场景、镜头等要素。直接返回提示词，要求中文，不要其他解释。',
-    model: 'gpt-5.5'
+    systemPrompt: '你是一个专业的AI视频提示词专家。将用户输入的内容美化成高质量的视频生成提示词，包含运动、场景、镜头等要素。直接返回提示词，要求中文，不要其他解释。'
   }
 }
 
@@ -320,8 +318,7 @@ const {
   currentResponse, 
   send: sendChat 
 } = useChat({
-  systemPrompt: CHAT_TEMPLATES.imagePrompt.systemPrompt,
-  model: CHAT_TEMPLATES.imagePrompt.model
+  systemPrompt: CHAT_TEMPLATES.imagePrompt.systemPrompt
 })
 
 // Workflow orchestrator hook | 工作流编排 hook

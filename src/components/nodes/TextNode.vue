@@ -115,10 +115,8 @@ const modelStore = useModelStore()
 const isApiConfigured = computed(() => !!modelStore.currentApiKey)
 
 // Chat hook for polish | 润色用的 Chat hook
-// 模型固定使用 gpt-5.5 进行润色
 const { send: sendChat } = useChat({
-  systemPrompt: '你是一个专业的AI绘画提示词专家。识别用户描述的核心元素（人物、动作、场景、风格），并补充专业的生图要素：光照、构图、细节、质感、情绪氛围。只输出优化后的提示词，不要其他内容。如果用户描述过于简单，默认使用写实摄影风格。',
-  model: 'gpt-5.5'
+  systemPrompt: '你是一个专业的AI绘画提示词专家。识别用户描述的核心元素（人物、动作、场景、风格），并补充专业的生图要素：光照、构图、细节、质感、情绪氛围。只输出优化后的提示词，不要其他内容。如果用户描述过于简单，默认使用写实摄影风格。'
 })
 
 // Local content state | 本地内容状态
@@ -441,7 +439,7 @@ const handleSelect = (item) => {
   const nodeY = currentNode?.position?.y || 0
 
   const defaultData = {
-    imageConfig: { model: 'doubao-seedream-4-5-251128', size: '2048x2048', label: '文生图' },
+    imageConfig: { model: modelStore.selectedImageModel || 'gpt-image-2', size: '2048x2048', label: '文生图' },
     videoConfig: { label: '视频生成' },
     llmConfig: { label: 'LLM文本生成' }
   }
@@ -696,7 +694,7 @@ const handleImageGen = () => {
 
   // Create imageConfig node | 创建text生图配置节点
   const configNodeId = addNode('imageConfig', { x: nodeX + 400, y: nodeY }, {
-    model: 'doubao-seedream-4-5-251128',
+    model: modelStore.selectedImageModel || 'gpt-image-2',
     size: '2048x2048',
     label: '文生图'
   })

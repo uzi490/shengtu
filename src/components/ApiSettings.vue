@@ -37,6 +37,27 @@
             </template>
           </n-form-item>
 
+          <div class="model-detection-card">
+            <div class="model-detection-header">
+              <div>
+                <div class="model-detection-title">检测 API Key 并拉取模型</div>
+                <div class="model-detection-desc">能拉到模型，说明这个 Key 至少可以连通本站中转站；具体生图/润色还要看模型权限。</div>
+              </div>
+              <n-button
+                type="primary"
+                secondary
+                :loading="detectingModels"
+                :disabled="!formData.apiKey.trim()"
+                @click="handleDetectModels"
+              >
+                检测并拉取
+              </n-button>
+            </div>
+            <n-alert v-if="modelDetection.message" :type="modelDetection.type" class="mt-3">
+              {{ modelDetection.message }}
+            </n-alert>
+          </div>
+
           <n-divider title-placement="left" class="!my-3">
             <span class="text-xs text-[var(--text-secondary)]">端点路径</span>
           </n-divider>
@@ -75,6 +96,15 @@
               <span class="model-group-title">问答模型</span>
               <n-tag size="tiny" type="info">{{ allChatModels.length }} 个</n-tag>
             </div>
+            <n-select
+              :value="modelStore.selectedChatModel"
+              :options="allChatModelOptions"
+              size="small"
+              filterable
+              placeholder="选择 AI 润色/文本生成模型"
+              class="mb-2"
+              @update:value="modelStore.setSelectedChatModel"
+            />
             <div class="model-input-row">
               <n-input
                 v-model:value="newChatModel"
@@ -106,6 +136,15 @@
               <span class="model-group-title">图片模型</span>
               <n-tag size="tiny" type="success">{{ allImageModels.length }} 个</n-tag>
             </div>
+            <n-select
+              :value="modelStore.selectedImageModel"
+              :options="allImageModelOptions"
+              size="small"
+              filterable
+              placeholder="选择默认生图模型"
+              class="mb-2"
+              @update:value="modelStore.setSelectedImageModel"
+            />
             <div class="model-input-row">
               <n-input
                 v-model:value="newImageModel"
@@ -137,6 +176,15 @@
               <span class="model-group-title">视频模型</span>
               <n-tag size="tiny" type="warning">{{ allVideoModels.length }} 个</n-tag>
             </div>
+            <n-select
+              :value="modelStore.selectedVideoModel"
+              :options="allVideoModelOptions"
+              size="small"
+              filterable
+              placeholder="选择默认视频模型"
+              class="mb-2"
+              @update:value="modelStore.setSelectedVideoModel"
+            />
             <div class="model-input-row">
               <n-input
                 v-model:value="newVideoModel"
@@ -187,6 +235,7 @@ import { ref, reactive, watch, computed } from 'vue'
 import { NModal, NForm, NFormItem, NInput, NButton, NAlert, NDivider, NTag, NTabs, NTabPane, NSelect } from 'naive-ui'
 import { useModelStore } from '../stores/pinia'
 import { getProviderConfig, LOCKED_PROVIDER, LOCKED_API_BASE_URL } from '../config/providers'
+import { fetchAvailableModels, classifyModels } from '../api/modelDiscovery'
 
 // Props | 属性
 const props = defineProps({
@@ -226,6 +275,9 @@ const currentEndpoints = computed(() => {
 const allChatModels = computed(() => modelStore.allChatModels)
 const allImageModels = computed(() => modelStore.allImageModels)
 const allVideoModels = computed(() => modelStore.allVideoModels)
+const allChatModelOptions = computed(() => modelStore.allChatModelOptions)
+const allImageModelOptions = computed(() => modelStore.allImageModelOptions)
+const allVideoModelOptions = computed(() => modelStore.allVideoModelOptions)
 
 // Modal visibility | 弹窗可见性
 const showModal = ref(props.show)
@@ -241,6 +293,11 @@ const formData = reactive({
 const newChatModel = ref('')
 const newImageModel = ref('')
 const newVideoModel = ref('')
+const detectingModels = ref(false)
+const modelDetection = reactive({
+  type: 'info',
+  message: ''
+})
 
 // 初始化或切换渠道时，更新 API 配置
 const updateFormApiConfig = () => {
@@ -303,6 +360,73 @@ const handleRemoveVideoModel = (modelKey) => {
   modelStore.removeCustomVideoModel(modelKey)
 }
 
+const handleDetectModels = async () => {
+  const apiKey = formData.apiKey.trim()
+  if (!apiKey) {
+    window.$message?.warning('请先填写你的 AIAIAI API Key')
+    return
+  }
+
+  detectingModels.value = true
+  modelDetection.message = ''
+
+  try {
+    const models = await fetchAvailableModels(apiKey)
+    const classified = classifyModels(models)
+
+    modelStore.setProvider(LOCKED_PROVIDER)
+    modelStore.setApiKeyByProvider(LOCKED_PROVIDER, apiKey)
+    modelStore.setBaseUrlByProvider(LOCKED_PROVIDER, LOCKED_API_BASE_URL)
+
+    const addedChat = addDiscoveredModels(classified.chat, allChatModels.value, modelStore.addCustomChatModel)
+    const addedImage = addDiscoveredModels(classified.image, allImageModels.value, modelStore.addCustomImageModel)
+    const addedVideo = addDiscoveredModels(classified.video, allVideoModels.value, modelStore.addCustomVideoModel)
+
+    if (classified.chat[0]) modelStore.setSelectedChatModel(classified.chat[0])
+    if (classified.image[0]) modelStore.setSelectedImageModel(classified.image[0])
+    if (classified.video[0]) modelStore.setSelectedVideoModel(classified.video[0])
+
+    const parts = [
+      `共拉到 ${models.length} 个模型`,
+      `问答 ${classified.chat.length} 个`,
+      `图片 ${classified.image.length} 个`,
+      `视频 ${classified.video.length} 个`
+    ]
+    const addedTotal = addedChat + addedImage + addedVideo
+    modelDetection.type = classified.image.length > 0 && classified.chat.length > 0 ? 'success' : 'warning'
+    modelDetection.message = `${parts.join('，')}。已新增 ${addedTotal} 个自定义模型。${buildCapabilityTip(classified)}`
+    window.$message?.success('API Key 可用，模型已拉取')
+  } catch (err) {
+    modelDetection.type = 'error'
+    modelDetection.message = err.message || '模型检测失败'
+    window.$message?.error(modelDetection.message)
+  } finally {
+    detectingModels.value = false
+  }
+}
+
+const addDiscoveredModels = (modelIds, existingModels, addFn) => {
+  const existingKeys = new Set(existingModels.map(model => model.key))
+  return modelIds.reduce((count, modelId) => {
+    if (existingKeys.has(modelId)) return count
+    existingKeys.add(modelId)
+    return addFn(modelId) ? count + 1 : count
+  }, 0)
+}
+
+const buildCapabilityTip = (classified) => {
+  if (classified.chat.length === 0 && classified.image.length === 0) {
+    return '没有识别到问答或图片模型，请检查 Key 的模型分组权限。'
+  }
+  if (classified.chat.length === 0) {
+    return '没有识别到问答模型，AI 润色可能不能用。'
+  }
+  if (classified.image.length === 0) {
+    return '没有识别到图片模型，生图可能不能用。'
+  }
+  return '后续润色会优先使用已选择的问答模型。'
+}
+
 // Handle save | 处理保存
 const handleSave = () => {
   const apiKey = formData.apiKey.trim()
@@ -359,6 +483,34 @@ const handleClear = () => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.model-detection-card {
+  padding: 12px;
+  margin-bottom: 14px;
+  background: var(--bg-secondary, #f5f5f5);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+}
+
+.model-detection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.model-detection-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+}
+
+.model-detection-desc {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary, #666);
 }
 
 .model-group {
