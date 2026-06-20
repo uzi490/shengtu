@@ -76,17 +76,23 @@ instance.interceptors.response.use(
     
     if (response) {
       const { status, data } = response
-      const message = data?.message || data?.error?.message || (typeof data?.error === 'string' ? data.error : '') || error.message
+      const message = getResponseErrorMessage(status, data, error.message)
       
       if (status === 401) {
-        window.$message?.error('API Key 无效、已过期，或没有当前模型权限')
+        window.$message?.error(message)
       } else if (status === 429) {
-        window.$message?.error('请求过于频繁，请稍后再试')
+        window.$message?.error(message)
       } else {
         window.$message?.error(message || '请求失败')
       }
+
+      error.message = message
+      error.userMessage = message
     } else {
-      window.$message?.error(error.message || '网络错误')
+      const message = error.message || '网络错误'
+      window.$message?.error(message)
+      error.message = message
+      error.userMessage = message
     }
     
     return Promise.reject(error)
@@ -110,3 +116,25 @@ export const getBaseUrl = () => {
 }
 
 export default instance
+
+const getResponseErrorMessage = (status, data, fallback = '请求失败') => {
+  const upstreamMessage = data?.message || data?.error?.message || (typeof data?.error === 'string' ? data.error : '')
+
+  if (status === 401) {
+    return upstreamMessage || 'API Key 无效、已过期，或没有当前模型权限'
+  }
+
+  if (status === 403) {
+    return upstreamMessage || 'API Key 没有当前模型或接口权限，请检查中转站分组权限'
+  }
+
+  if (status === 404) {
+    return upstreamMessage || '当前模型或接口不存在，请先检测并选择可用模型'
+  }
+
+  if (status === 429) {
+    return upstreamMessage || '图片生成被限流或额度/并发不足，请稍后重试，或换一个图片模型 / 降低尺寸后再生成'
+  }
+
+  return upstreamMessage || fallback || `请求失败：HTTP ${status}`
+}

@@ -113,6 +113,15 @@ async function handleAiProxy(req, res, requestUrl) {
     redirect: 'follow'
   })
 
+  if (!upstreamResponse.ok) {
+    console.warn('[ai-proxy] upstream non-2xx', {
+      method: req.method,
+      path: upstreamPath,
+      status: upstreamResponse.status,
+      contentType: upstreamResponse.headers.get('content-type') || ''
+    })
+  }
+
   const contentType = upstreamResponse.headers.get('content-type') || 'application/json; charset=utf-8'
   const responseHeaders = {
     'content-type': contentType,
