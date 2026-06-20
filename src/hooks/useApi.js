@@ -91,8 +91,9 @@ export const useChat = (options = {}) => {
       ]
 
       // 适配请求参数
+      const chatModel = chatOptions.model || options.model || modelStore.selectedChatModel || modelStore.availableChatModels[0]?.key || 'gpt-5.5'
       const adaptedParams = adaptRequest('chat', {
-        model: options.model || 'gpt-5.5',
+        model: chatModel,
         messages: msgList
       })
 

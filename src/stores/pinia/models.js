@@ -152,6 +152,18 @@ export const useModelStore = defineStore('model', () => {
   const selectedImageModel = ref(getStored(STORAGE_KEYS.SELECTED_IMAGE_MODEL, DEFAULT_IMAGE_MODEL))
   const selectedVideoModel = ref(getStored(STORAGE_KEYS.SELECTED_VIDEO_MODEL, DEFAULT_VIDEO_MODEL))
 
+  const setSelectedChatModel = (modelKey) => {
+    selectedChatModel.value = modelKey || DEFAULT_CHAT_MODEL
+  }
+
+  const setSelectedImageModel = (modelKey) => {
+    selectedImageModel.value = modelKey || DEFAULT_IMAGE_MODEL
+  }
+
+  const setSelectedVideoModel = (modelKey) => {
+    selectedVideoModel.value = modelKey || DEFAULT_VIDEO_MODEL
+  }
+
   // 按渠道存储的 API 配置
   const apiKeysByProvider = ref(getStoredJson(STORAGE_KEYS.API_KEYS_BY_PROVIDER, {}))
   const baseUrlsByProvider = ref(getStoredJson(STORAGE_KEYS.BASE_URLS_BY_PROVIDER, {}))
@@ -566,6 +578,9 @@ export const useModelStore = defineStore('model', () => {
     selectedChatModel,
     selectedImageModel,
     selectedVideoModel,
+    setSelectedChatModel,
+    setSelectedImageModel,
+    setSelectedVideoModel,
 
     // Custom models
     customChatModels,

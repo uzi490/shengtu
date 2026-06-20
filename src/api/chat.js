@@ -29,8 +29,8 @@ export const streamChatCompletions = async function* (data, signal, options = {}
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error?.error?.message || error?.message || 'Stream request failed')
+    const error = await readJsonSafe(response)
+    throw new Error(buildChatError(response.status, error))
   }
 
   const reader = response.body.getReader()
@@ -61,4 +61,34 @@ export const streamChatCompletions = async function* (data, signal, options = {}
       }
     }
   }
+}
+
+const readJsonSafe = async (response) => {
+  try {
+    return await response.json()
+  } catch {
+    return {}
+  }
+}
+
+const buildChatError = (status, error) => {
+  const message = error?.error?.message || error?.message || error?.error
+
+  if (status === 401) {
+    return 'API Key 无效、已过期，或没有当前模型权限'
+  }
+
+  if (status === 403) {
+    return 'API Key 没有使用这个润色模型的权限，请先在 API 设置里检测并拉取模型'
+  }
+
+  if (status === 404) {
+    return '当前润色模型不存在，请先在 API 设置里检测并选择可用问答模型'
+  }
+
+  if (status === 429) {
+    return '请求过于频繁，请稍后再试'
+  }
+
+  return message || `润色请求失败：HTTP ${status}`
 }
