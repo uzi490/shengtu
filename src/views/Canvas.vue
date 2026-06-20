@@ -289,7 +289,7 @@ import { ECOMMERCE_PROMPTS, createEcommercePromptWorkflow } from '../config/ecom
 
 // API Config state | API 配置状态
 const modelStore = useModelStore()
-const isApiConfigured = computed(() => !!modelStore.currentApiKey)
+const isApiConfigured = computed(() => modelStore.hasAnyApiKey)
 
 // Initialize models on page load | 页面加载时初始化模型
 onMounted(() => {

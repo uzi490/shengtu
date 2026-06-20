@@ -24,7 +24,7 @@
               <span class="text-xs text-[var(--text-secondary)]">已锁定为本站后端代理，请求会走服务器内网中转。</span>
             </template>
           </n-form-item>
-          <n-form-item label="API Key" path="apiKey">
+          <n-form-item label="通用 Key" path="apiKey">
             <n-input
               v-model:value="formData.apiKey"
               type="password"
@@ -33,25 +33,110 @@
               clearable
             />
             <template #feedback>
-              <span class="text-xs text-[var(--text-secondary)]">用你自己的中转站 Key 扣费，建议创建“商图工坊专用”分组 Key，包含图片和文本模型。</span>
+              <span class="text-xs text-[var(--text-secondary)]">普通用户只填这里即可。下面的专用 Key 为空时，会自动回退使用通用 Key。</span>
             </template>
           </n-form-item>
+
+          <div class="purpose-key-list">
+            <div class="purpose-key-item">
+              <div class="purpose-key-copy">
+                <div class="purpose-key-title">文本 Key</div>
+                <div class="purpose-key-desc">AI 润色、提示词生成、工作流生成使用</div>
+              </div>
+              <n-input
+                v-model:value="formData.chatApiKey"
+                type="password"
+                show-password-on="click"
+                placeholder="可选：专门给文本模型的 Key"
+                clearable
+              />
+            </div>
+            <div class="purpose-key-item">
+              <div class="purpose-key-copy">
+                <div class="purpose-key-title">图片 Key</div>
+                <div class="purpose-key-desc">文生图、图生图使用，建议绑定 GPT-Image 分组</div>
+              </div>
+              <n-input
+                v-model:value="formData.imageApiKey"
+                type="password"
+                show-password-on="click"
+                placeholder="可选：专门给 gpt-image-2 的 Key"
+                clearable
+              />
+            </div>
+            <div class="purpose-key-item">
+              <div class="purpose-key-copy">
+                <div class="purpose-key-title">视频 Key</div>
+                <div class="purpose-key-desc">视频生成和任务查询使用</div>
+              </div>
+              <n-input
+                v-model:value="formData.videoApiKey"
+                type="password"
+                show-password-on="click"
+                placeholder="可选：专门给视频模型的 Key"
+                clearable
+              />
+            </div>
+            <div class="purpose-key-item">
+              <div class="purpose-key-copy">
+                <div class="purpose-key-title">音频 Key</div>
+                <div class="purpose-key-desc">预留给后续语音/音乐功能</div>
+              </div>
+              <n-input
+                v-model:value="formData.audioApiKey"
+                type="password"
+                show-password-on="click"
+                placeholder="可选：当前版本先保存备用"
+                clearable
+              />
+            </div>
+          </div>
 
           <div class="model-detection-card">
             <div class="model-detection-header">
               <div>
-                <div class="model-detection-title">检测 API Key 并拉取模型</div>
-                <div class="model-detection-desc">能拉到模型，说明这个 Key 至少可以连通本站中转站；具体生图/润色还要看模型权限。</div>
+                <div class="model-detection-title">检测 Key 并拉取模型</div>
+                <div class="model-detection-desc">先用通用 Key 检测；如果图片/视频填了专用 Key，也可以分别检测对应权限。</div>
               </div>
-              <n-button
-                type="primary"
-                secondary
-                :loading="detectingModels"
-                :disabled="!formData.apiKey.trim()"
-                @click="handleDetectModels"
-              >
-                检测并拉取
-              </n-button>
+              <div class="model-detection-actions">
+                <n-button
+                  type="primary"
+                  secondary
+                  size="small"
+                  :loading="detectingModels"
+                  :disabled="!formData.apiKey.trim()"
+                  @click="handleDetectModels('default')"
+                >
+                  检测通用
+                </n-button>
+                <n-button
+                  secondary
+                  size="small"
+                  :loading="detectingModels"
+                  :disabled="!formData.chatApiKey.trim()"
+                  @click="handleDetectModels('chat')"
+                >
+                  文本
+                </n-button>
+                <n-button
+                  secondary
+                  size="small"
+                  :loading="detectingModels"
+                  :disabled="!formData.imageApiKey.trim()"
+                  @click="handleDetectModels('image')"
+                >
+                  图片
+                </n-button>
+                <n-button
+                  secondary
+                  size="small"
+                  :loading="detectingModels"
+                  :disabled="!formData.videoApiKey.trim()"
+                  @click="handleDetectModels('video')"
+                >
+                  视频
+                </n-button>
+              </div>
             </div>
             <n-alert v-if="modelDetection.message" :type="modelDetection.type" class="mt-3">
               {{ modelDetection.message }}
@@ -252,7 +337,7 @@ const emit = defineEmits(['update:show', 'saved'])
 const modelStore = useModelStore()
 
 // API Config 状态
-const isConfigured = computed(() => !!modelStore.currentApiKey)
+const isConfigured = computed(() => modelStore.hasAnyApiKey)
 
 // Provider options for select | 渠道下拉选项
 const providerOptions = modelStore.providerList.map(p => ({
@@ -286,6 +371,10 @@ const showModal = ref(props.show)
 const formData = reactive({
   provider: LOCKED_PROVIDER,
   apiKey: '',
+  chatApiKey: '',
+  imageApiKey: '',
+  videoApiKey: '',
+  audioApiKey: '',
   baseUrl: LOCKED_API_BASE_URL
 })
 
@@ -303,6 +392,10 @@ const modelDetection = reactive({
 const updateFormApiConfig = () => {
   formData.provider = LOCKED_PROVIDER
   formData.apiKey = modelStore.currentApiKey
+  formData.chatApiKey = modelStore.currentChatApiKey
+  formData.imageApiKey = modelStore.currentImageApiKey
+  formData.videoApiKey = modelStore.currentVideoApiKey
+  formData.audioApiKey = modelStore.currentAudioApiKey
   formData.baseUrl = LOCKED_API_BASE_URL
 }
 
@@ -360,10 +453,30 @@ const handleRemoveVideoModel = (modelKey) => {
   modelStore.removeCustomVideoModel(modelKey)
 }
 
-const handleDetectModels = async () => {
-  const apiKey = formData.apiKey.trim()
+const getDetectionApiKey = (purpose) => {
+  const keys = {
+    chat: formData.chatApiKey,
+    image: formData.imageApiKey,
+    video: formData.videoApiKey,
+    audio: formData.audioApiKey
+  }
+  return String(keys[purpose] || formData.apiKey || '').trim()
+}
+
+const getDetectionLabel = (purpose) => {
+  const labels = {
+    chat: '文本 Key',
+    image: '图片 Key',
+    video: '视频 Key',
+    audio: '音频 Key'
+  }
+  return labels[purpose] || '通用 Key'
+}
+
+const handleDetectModels = async (purpose = 'default') => {
+  const apiKey = getDetectionApiKey(purpose)
   if (!apiKey) {
-    window.$message?.warning('请先填写你的 AIAIAI API Key')
+    window.$message?.warning(`请先填写${getDetectionLabel(purpose)}`)
     return
   }
 
@@ -375,7 +488,11 @@ const handleDetectModels = async () => {
     const classified = classifyModels(models)
 
     modelStore.setProvider(LOCKED_PROVIDER)
-    modelStore.setApiKeyByProvider(LOCKED_PROVIDER, apiKey)
+    if (purpose === 'default') {
+      modelStore.setApiKeyByProvider(LOCKED_PROVIDER, apiKey)
+    } else {
+      modelStore.setApiKeyByPurpose(purpose, apiKey)
+    }
     modelStore.setBaseUrlByProvider(LOCKED_PROVIDER, LOCKED_API_BASE_URL)
 
     const addedChat = addDiscoveredModels(classified.chat, allChatModels.value, modelStore.addCustomChatModel)
@@ -394,8 +511,8 @@ const handleDetectModels = async () => {
     ]
     const addedTotal = addedChat + addedImage + addedVideo
     modelDetection.type = classified.image.length > 0 && classified.chat.length > 0 ? 'success' : 'warning'
-    modelDetection.message = `${parts.join('，')}。已新增 ${addedTotal} 个自定义模型。${buildCapabilityTip(classified)}`
-    window.$message?.success('API Key 可用，模型已拉取')
+    modelDetection.message = `${getDetectionLabel(purpose)}：${parts.join('，')}。已新增 ${addedTotal} 个自定义模型。${buildCapabilityTip(classified)}`
+    window.$message?.success(`${getDetectionLabel(purpose)}可用，模型已拉取`)
   } catch (err) {
     modelDetection.type = 'error'
     modelDetection.message = err.message || '模型检测失败'
@@ -430,12 +547,18 @@ const buildCapabilityTip = (classified) => {
 // Handle save | 处理保存
 const handleSave = () => {
   const apiKey = formData.apiKey.trim()
-  if (!apiKey) {
-    window.$message?.warning('请先填写你的 AIAIAI API Key')
+  const hasPurposeKey = [formData.chatApiKey, formData.imageApiKey, formData.videoApiKey, formData.audioApiKey]
+    .some(key => String(key || '').trim())
+  if (!apiKey && !hasPurposeKey) {
+    window.$message?.warning('请至少填写一个 AIAIAI API Key')
     return
   }
   modelStore.setProvider(LOCKED_PROVIDER)
   modelStore.setApiKeyByProvider(LOCKED_PROVIDER, apiKey)
+  modelStore.setApiKeyByPurpose('chat', formData.chatApiKey)
+  modelStore.setApiKeyByPurpose('image', formData.imageApiKey)
+  modelStore.setApiKeyByPurpose('video', formData.videoApiKey)
+  modelStore.setApiKeyByPurpose('audio', formData.audioApiKey)
   modelStore.setBaseUrlByProvider(LOCKED_PROVIDER, LOCKED_API_BASE_URL)
   showModal.value = false
   emit('saved')
@@ -446,6 +569,10 @@ const handleClear = () => {
   modelStore.clearApiConfigByProvider(LOCKED_PROVIDER)
   modelStore.clearCustomModels()
   formData.apiKey = ''
+  formData.chatApiKey = ''
+  formData.imageApiKey = ''
+  formData.videoApiKey = ''
+  formData.audioApiKey = ''
   formData.provider = LOCKED_PROVIDER
   formData.baseUrl = LOCKED_API_BASE_URL
 }
@@ -460,6 +587,41 @@ const handleClear = () => {
   padding: 12px;
   background: var(--bg-secondary, #f5f5f5);
   border-radius: 6px;
+}
+
+.purpose-key-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.purpose-key-item {
+  display: grid;
+  grid-template-columns: minmax(128px, 0.42fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-secondary, #f5f5f5);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+}
+
+.purpose-key-copy {
+  min-width: 0;
+}
+
+.purpose-key-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #333);
+}
+
+.purpose-key-desc {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary, #666);
 }
 
 .endpoint-item {
@@ -498,6 +660,14 @@ const handleClear = () => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.model-detection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 190px;
 }
 
 .model-detection-title {
@@ -547,5 +717,21 @@ const handleClear = () => {
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .purpose-key-item {
+    grid-template-columns: 1fr;
+  }
+
+  .model-detection-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .model-detection-actions {
+    justify-content: flex-start;
+    min-width: 0;
+  }
 }
 </style>

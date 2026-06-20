@@ -4,6 +4,6 @@
 
 export * from './constants'
 export * from './schema'
-import request, { setBaseUrl, getBaseUrl, getStoredApiKey } from './request'
+import request, { setBaseUrl, getBaseUrl, getStoredApiKey, API_KEY_PURPOSES, API_KEY_PURPOSE_HEADER } from './request'
 
-export { request, setBaseUrl, getBaseUrl, getStoredApiKey }
+export { request, setBaseUrl, getBaseUrl, getStoredApiKey, API_KEY_PURPOSES, API_KEY_PURPOSE_HEADER }

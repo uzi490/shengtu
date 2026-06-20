@@ -2,7 +2,7 @@
  * Video API | 视频生成 API
  */
 
-import { request } from '@/utils'
+import { API_KEY_PURPOSE_HEADER, API_KEY_PURPOSES, request } from '@/utils'
 
 // 创建视频任务
 export const createVideoTask = (data, options = {}) => {
@@ -11,9 +11,12 @@ export const createVideoTask = (data, options = {}) => {
     url: endpoint,
     method: 'post',
     data,
-    headers: requestType === 'formdata'
-      ? { 'Content-Type': 'multipart/form-data' }
-      : { 'Content-Type': 'application/json' }
+    headers: {
+      ...(requestType === 'formdata'
+        ? { 'Content-Type': 'multipart/form-data' }
+        : { 'Content-Type': 'application/json' }),
+      [API_KEY_PURPOSE_HEADER]: API_KEY_PURPOSES.VIDEO
+    }
   })
 }
 
@@ -22,7 +25,10 @@ export const getVideoTaskStatus = (taskId, options = {}) => {
   const { endpoint = '/videos' } = options
   return request({
     url: `${endpoint}?task_id=${taskId}`,
-    method: 'get'
+    method: 'get',
+    headers: {
+      [API_KEY_PURPOSE_HEADER]: API_KEY_PURPOSES.VIDEO
+    }
   })
 }
 
@@ -31,7 +37,10 @@ export const getVideoFileUrl = (fileId, options = {}) => {
   const { endpoint = '/v1/files/retrieve' } = options
   return request({
     url: `${endpoint}?file_id=${fileId}`,
-    method: 'get'
+    method: 'get',
+    headers: {
+      [API_KEY_PURPOSE_HEADER]: API_KEY_PURPOSES.VIDEO
+    }
   })
 }
 // 轮询视频任务直到完成

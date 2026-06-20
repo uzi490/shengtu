@@ -2,7 +2,7 @@
  * Image API | 图片生成 API
  */
 
-import { request } from '@/utils'
+import { API_KEY_PURPOSE_HEADER, API_KEY_PURPOSES, request } from '@/utils'
 
 // 生成图片
 export const generateImage = (data, options = {}) => {
@@ -12,6 +12,9 @@ export const generateImage = (data, options = {}) => {
     url: endpoint,
     method: 'post',
     data,
-    headers: requestType === 'formdata' ? { 'Content-Type': 'multipart/form-data' } : {}
+    headers: {
+      ...(requestType === 'formdata' ? { 'Content-Type': 'multipart/form-data' } : {}),
+      [API_KEY_PURPOSE_HEADER]: API_KEY_PURPOSES.IMAGE
+    }
   })
 }

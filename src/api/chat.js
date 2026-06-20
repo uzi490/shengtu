@@ -3,7 +3,7 @@
  */
 
 import { request } from '@/utils'
-import { getStoredApiKey } from '@/utils'
+import { API_KEY_PURPOSES, getStoredApiKey } from '@/utils'
 
 // 对话补全
 export const chatCompletions = (data) =>
@@ -22,7 +22,7 @@ export const streamChatCompletions = async function* (data, signal, options = {}
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(getStoredApiKey() ? { Authorization: `Bearer ${getStoredApiKey()}` } : {})
+      ...(getStoredApiKey(API_KEY_PURPOSES.CHAT) ? { Authorization: `Bearer ${getStoredApiKey(API_KEY_PURPOSES.CHAT)}` } : {})
     },
     body: JSON.stringify({ ...data, stream: true }),
     signal

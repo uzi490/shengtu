@@ -6,19 +6,51 @@
 import axios from 'axios'
 
 const LOCKED_PROVIDER = 'longcheng'
+const API_KEYS_BY_PURPOSE_STORAGE_KEY = 'api-keys-by-purpose'
+const API_KEYS_BY_PROVIDER_STORAGE_KEY = 'api-keys-by-provider'
+export const API_KEY_PURPOSE_HEADER = 'X-Canvas-Key-Purpose'
 
-export const getStoredApiKey = () => {
+export const API_KEY_PURPOSES = {
+  DEFAULT: 'default',
+  CHAT: 'chat',
+  IMAGE: 'image',
+  VIDEO: 'video',
+  AUDIO: 'audio'
+}
+
+const readStoredJson = (key) => {
   try {
-    const apiKeys = JSON.parse(localStorage.getItem('api-keys-by-provider') || '{}')
-    return String(apiKeys[LOCKED_PROVIDER] || '').trim()
+    return JSON.parse(localStorage.getItem(key) || '{}')
   } catch {
-    return ''
+    return {}
   }
+}
+
+export const getStoredApiKey = (purpose = API_KEY_PURPOSES.DEFAULT) => {
+  const normalizedPurpose = String(purpose || API_KEY_PURPOSES.DEFAULT).trim()
+  const apiKeysByPurpose = readStoredJson(API_KEYS_BY_PURPOSE_STORAGE_KEY)
+  const apiKeysByProvider = readStoredJson(API_KEYS_BY_PROVIDER_STORAGE_KEY)
+  const defaultKey = String(apiKeysByProvider[LOCKED_PROVIDER] || '').trim()
+
+  if (!normalizedPurpose || normalizedPurpose === API_KEY_PURPOSES.DEFAULT) {
+    return defaultKey
+  }
+
+  return String(apiKeysByPurpose[normalizedPurpose] || '').trim() || defaultKey
 }
 
 const isAiProxyRequest = (url = '') => {
   const value = String(url)
   return value.startsWith('/api/ai/') || value.includes('/api/ai/')
+}
+
+const inferApiKeyPurpose = (url = '') => {
+  const value = String(url).toLowerCase()
+  if (value.includes('/image') || value.includes('/images/')) return API_KEY_PURPOSES.IMAGE
+  if (value.includes('/video') || value.includes('/videos/')) return API_KEY_PURPOSES.VIDEO
+  if (value.includes('/audio') || value.includes('/audios/')) return API_KEY_PURPOSES.AUDIO
+  if (value.includes('/chat/') || value.includes('/responses')) return API_KEY_PURPOSES.CHAT
+  return API_KEY_PURPOSES.DEFAULT
 }
 
 // Create axios instance | 创建 axios 实例
@@ -31,10 +63,25 @@ const instance = axios.create({
 instance.interceptors.request.use(
   (config) => {
     if (isAiProxyRequest(config.url)) {
-      const apiKey = getStoredApiKey()
+      const headers = config.headers || {}
+      const headerPurpose = typeof headers.get === 'function'
+        ? headers.get(API_KEY_PURPOSE_HEADER)
+        : headers[API_KEY_PURPOSE_HEADER]
+      const purpose = headerPurpose || config.apiKeyPurpose || inferApiKeyPurpose(config.url)
+      if (typeof headers.delete === 'function') {
+        headers.delete(API_KEY_PURPOSE_HEADER)
+      } else {
+        delete headers[API_KEY_PURPOSE_HEADER]
+      }
+
+      const apiKey = getStoredApiKey(purpose)
       if (apiKey) {
-        config.headers = config.headers || {}
-        config.headers.Authorization = `Bearer ${apiKey}`
+        config.headers = headers
+        if (typeof config.headers.set === 'function') {
+          config.headers.set('Authorization', `Bearer ${apiKey}`)
+        } else {
+          config.headers.Authorization = `Bearer ${apiKey}`
+        }
       }
     }
     return config

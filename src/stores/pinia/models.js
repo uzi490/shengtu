@@ -28,7 +28,15 @@ const STORAGE_KEYS = {
   CUSTOM_IMAGE_MODELS_BY_PROVIDER: 'custom-image-models-by-provider',
   CUSTOM_VIDEO_MODELS_BY_PROVIDER: 'custom-video-models-by-provider',
   API_KEYS_BY_PROVIDER: 'api-keys-by-provider',
+  API_KEYS_BY_PURPOSE: 'api-keys-by-purpose',
   BASE_URLS_BY_PROVIDER: 'base-urls-by-provider'
+}
+
+const API_KEY_PURPOSES = {
+  CHAT: 'chat',
+  IMAGE: 'image',
+  VIDEO: 'video',
+  AUDIO: 'audio'
 }
 
 /**
@@ -166,10 +174,22 @@ export const useModelStore = defineStore('model', () => {
 
   // 按渠道存储的 API 配置
   const apiKeysByProvider = ref(getStoredJson(STORAGE_KEYS.API_KEYS_BY_PROVIDER, {}))
+  const apiKeysByPurpose = ref(getStoredJson(STORAGE_KEYS.API_KEYS_BY_PURPOSE, {}))
   const baseUrlsByProvider = ref(getStoredJson(STORAGE_KEYS.BASE_URLS_BY_PROVIDER, {}))
 
   // 当前渠道的 API Key 和 Base URL。用户 Key 只用于本站代理转发，用于按用户自己的 New API Key 扣费。
   const currentApiKey = computed(() => apiKeysByProvider.value[LOCKED_PROVIDER] || '')
+  const currentChatApiKey = computed(() => apiKeysByPurpose.value[API_KEY_PURPOSES.CHAT] || '')
+  const currentImageApiKey = computed(() => apiKeysByPurpose.value[API_KEY_PURPOSES.IMAGE] || '')
+  const currentVideoApiKey = computed(() => apiKeysByPurpose.value[API_KEY_PURPOSES.VIDEO] || '')
+  const currentAudioApiKey = computed(() => apiKeysByPurpose.value[API_KEY_PURPOSES.AUDIO] || '')
+  const hasAnyApiKey = computed(() => Boolean(
+    currentApiKey.value ||
+    currentChatApiKey.value ||
+    currentImageApiKey.value ||
+    currentVideoApiKey.value ||
+    currentAudioApiKey.value
+  ))
   const currentBaseUrl = computed(() => LOCKED_API_BASE_URL)
 
   // 设置指定渠道的 API Key
@@ -182,6 +202,18 @@ export const useModelStore = defineStore('model', () => {
     }
   }
 
+  const setApiKeyByPurpose = (purpose, apiKey) => {
+    const normalizedPurpose = String(purpose || '').trim()
+    if (!Object.values(API_KEY_PURPOSES).includes(normalizedPurpose)) return
+
+    const key = String(apiKey || '').trim()
+    if (key) {
+      apiKeysByPurpose.value[normalizedPurpose] = key
+    } else {
+      delete apiKeysByPurpose.value[normalizedPurpose]
+    }
+  }
+
   // 设置指定渠道的 Base URL
   const setBaseUrlByProvider = (provider, baseUrl) => {
     baseUrlsByProvider.value[LOCKED_PROVIDER] = LOCKED_API_BASE_URL
@@ -190,6 +222,7 @@ export const useModelStore = defineStore('model', () => {
   // 清除指定渠道的 API 配置
   const clearApiConfigByProvider = (provider) => {
     delete apiKeysByProvider.value[LOCKED_PROVIDER]
+    apiKeysByPurpose.value = {}
     baseUrlsByProvider.value[LOCKED_PROVIDER] = LOCKED_API_BASE_URL
   }
 
@@ -541,6 +574,7 @@ export const useModelStore = defineStore('model', () => {
 
   // 监听并持久化 API 配置
   watch(apiKeysByProvider, (val) => setStoredJson(STORAGE_KEYS.API_KEYS_BY_PROVIDER, val), { deep: true })
+  watch(apiKeysByPurpose, (val) => setStoredJson(STORAGE_KEYS.API_KEYS_BY_PURPOSE, val), { deep: true })
   watch(baseUrlsByProvider, (val) => setStoredJson(STORAGE_KEYS.BASE_URLS_BY_PROVIDER, val), { deep: true })
 
   return {
@@ -627,10 +661,17 @@ export const useModelStore = defineStore('model', () => {
 
     // API Config by provider
     currentApiKey,
+    currentChatApiKey,
+    currentImageApiKey,
+    currentVideoApiKey,
+    currentAudioApiKey,
+    hasAnyApiKey,
     currentBaseUrl,
     apiKeysByProvider,
+    apiKeysByPurpose,
     baseUrlsByProvider,
     setApiKeyByProvider,
+    setApiKeyByPurpose,
     setBaseUrlByProvider,
     clearApiConfigByProvider
   }
