@@ -174,6 +174,15 @@ export const useImageGeneration = () => {
     return ['low', 'medium', 'high', 'auto'].includes(quality) ? quality : 'auto'
   }
 
+  const buildImageEditPrompt = (prompt = '') => {
+    const userPrompt = String(prompt || '').trim() || '请基于参考图生成一张新图'
+    return [
+      '你正在进行图生图编辑。参考图是必须遵守的主约束：除非下面的要求明确说明要改变，否则必须保留参考图中主体商品/人物/物体的核心外观、款式、轮廓、颜色、材质、图案、装饰和比例关系，不要凭空替换成另一件商品或另一个主体。',
+      '可以根据用户要求优化背景、光影、构图、清晰度和电商展示质感，但参考图里的主体应保持可识别、可追溯。',
+      `用户要求：${userPrompt}`
+    ].join('\n\n')
+  }
+
   const imageSourceToFile = async (source, index = 0) => {
     if (source instanceof File) return source
 
@@ -207,7 +216,7 @@ export const useImageGeneration = () => {
     const formData = new FormData()
 
     formData.append('model', params.model)
-    formData.append('prompt', params.prompt || '请基于参考图生成一张新图')
+    formData.append('prompt', buildImageEditPrompt(params.prompt))
     formData.append('size', normalizeImageEditSize(params.size || modelConfig?.defaultParams?.size))
     if (params.n) formData.append('n', String(params.n))
     formData.append('quality', normalizeImageEditQuality(params.quality))
