@@ -217,7 +217,7 @@ const props = defineProps({
 const { updateNodeInternals } = useVueFlow()
 
 // API config state | API 配置状态
-const isConfigured = computed(() => !!modelStore.currentApiKey)
+const isConfigured = computed(() => !!(modelStore.currentImageApiKey || modelStore.currentApiKey))
 
 // Image generation hook | 图片生成 hook
 const { loading, error, images: generatedImages, generate } = useImageGeneration()
@@ -225,7 +225,7 @@ const { loading, error, images: generatedImages, generate } = useImageGeneration
 // Local state | 本地状态
 const showHandleMenu = ref(false)
 const localModel = ref(props.data?.model || DEFAULT_IMAGE_MODEL)
-const localSize = ref(props.data?.size || '2048x2048')
+const localSize = ref(props.data?.size || '1024x1024')
 const localQuality = ref(props.data?.quality || 'standard')
 const localN = ref(props.data?.n || 1)
 
@@ -584,6 +584,16 @@ const nOptions = computed(() => {
   return options
 })
 
+const getFriendlyGenerationError = (err) => {
+  const rawMessage = err?.userMessage || err?.message || ''
+
+  if (/504|502|503|timeout|broken pipe|Network Error/i.test(rawMessage)) {
+    return '生成结果回传超时。后台可能已经生成并扣费，请先去素材库或后台日志查结果，不要马上重复点击生成'
+  }
+
+  return rawMessage || '图片生成失败'
+}
+
 // Update size from manual input | 更新手动输入的尺寸
 const updateSize = () => {
   updateNode(props.id, { size: localSize.value })
@@ -667,7 +677,7 @@ const handleGenerate = async (mode = 'auto') => {
   }
 
   if (!isConfigured.value) {
-    window.$message?.warning('请先填写你的 AIAIAI API Key')
+    window.$message?.warning('请先填写你的 AIAIAI 图片 API Key')
     return
   }
 
@@ -677,7 +687,7 @@ const handleGenerate = async (mode = 'auto') => {
     // Replace mode: find any connected image node | 替换模式：查找任意连接的图片节点
     imageNodeId = findConnectedOutputImageNode(false)
     if (imageNodeId) {
-      updateNode(imageNodeId, { loading: true, url: '' })
+      updateNode(imageNodeId, { loading: true, url: '', error: '', statusText: '生成中，通常需要 1-2 分钟，请不要重复点击' })
     }
   } else if (mode === 'new') {
     // New mode: always create new node | 新建模式：始终创建新节点
@@ -686,7 +696,7 @@ const handleGenerate = async (mode = 'auto') => {
     // Auto mode: check for empty connected node first | 自动模式：先检查空白连接节点
     imageNodeId = findConnectedOutputImageNode(true)
     if (imageNodeId) {
-      updateNode(imageNodeId, { loading: true })
+      updateNode(imageNodeId, { loading: true, error: '', statusText: '生成中，通常需要 1-2 分钟，请不要重复点击' })
     }
   }
   
@@ -707,6 +717,7 @@ const handleGenerate = async (mode = 'auto') => {
     imageNodeId = addNode('image', { x: nodeX + 400, y: nodeY + yOffset }, {
       url: '',
       loading: true,
+      statusText: '生成中，通常需要 1-2 分钟，请不要重复点击',
       label: '图像生成结果'
     })
 
@@ -765,6 +776,7 @@ const handleGenerate = async (mode = 'auto') => {
           assetId: asset?.id || '',
           assetExpiresAt: asset?.expiresAt || '',
           assetRetentionHours: asset ? 24 : null,
+          statusText: '',
           updatedAt: Date.now()
         })
         updateNode(props.id, { executed: true, outputNodeId: imageNodeId })
@@ -781,6 +793,7 @@ const handleGenerate = async (mode = 'auto') => {
           assetId: firstAsset?.id || '',
           assetExpiresAt: firstAsset?.expiresAt || '',
           assetRetentionHours: firstAsset ? 24 : null,
+          statusText: '',
           updatedAt: Date.now()
         })
 
@@ -802,6 +815,7 @@ const handleGenerate = async (mode = 'auto') => {
             assetId: asset?.id || '',
             assetExpiresAt: asset?.expiresAt || '',
             assetRetentionHours: asset ? 24 : null,
+            statusText: '',
             updatedAt: Date.now()
           })
           addEdge({
@@ -822,13 +836,15 @@ const handleGenerate = async (mode = 'auto') => {
     }
     window.$message?.success('图片生成成功')
   } catch (err) {
+    const message = getFriendlyGenerationError(err)
     // Update node to show error | 更新节点显示错误
     updateNode(imageNodeId, {
       loading: false,
-      error: err.message || '生成失败',
+      error: message,
+      statusText: '',
       updatedAt: Date.now()
     })
-    window.$message?.error(err.message || '图片生成失败')
+    window.$message?.error(message)
   }
 }
 

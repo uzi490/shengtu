@@ -448,6 +448,7 @@ export const CHAT_MODELS = [
 
 // Image size options | 图片尺寸选项
 export const IMAGE_SIZE_OPTIONS = [
+    { label: '1024x1024', key: '1024x1024' },
     { label: '2048x2048', key: '2048x2048' },
     { label: '1792x1024 (横版)', key: '1792x1024' },
     { label: '1024x1792 (竖版)', key: '1024x1792' }
@@ -478,7 +479,7 @@ export const VIDEO_DURATION_OPTIONS = [
 export const DEFAULT_IMAGE_MODEL = 'gpt-image-2'
 export const DEFAULT_VIDEO_MODEL = 'doubao-seedance-1-5-pro-251215'
 export const DEFAULT_CHAT_MODEL = 'gpt-5.5'
-export const DEFAULT_IMAGE_SIZE = '2048x2048'
+export const DEFAULT_IMAGE_SIZE = '1024x1024'
 export const DEFAULT_VIDEO_RATIO = '16:9'
 export const DEFAULT_VIDEO_DURATION = 5
 

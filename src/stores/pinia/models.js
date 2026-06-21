@@ -425,6 +425,11 @@ export const useModelStore = defineStore('model', () => {
     return `${currentBaseUrl.value}${endpoint}`
   }
 
+  const getImageEditEndpoint = (modelKey) => {
+    const endpoint = providerConfig.value.endpoints?.imageEdit || '/images/edits'
+    return `${currentBaseUrl.value}${endpoint}`
+  }
+
   // 获取视频生成端点
   const getVideoEndpoint = () => {
     const endpoint = providerConfig.value.endpoints?.video || '/videos'
@@ -649,6 +654,7 @@ export const useModelStore = defineStore('model', () => {
 
     // Get API endpoints
     getImageEndpoint,
+    getImageEditEndpoint,
     getVideoEndpoint,
     getVideoTaskEndpoint,
     getChatEndpoint,

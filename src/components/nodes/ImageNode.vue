@@ -130,6 +130,9 @@
         <div v-if="assetStatusText" class="mt-1 text-[11px] text-[var(--text-secondary)] truncate">
           {{ assetStatusText }}
         </div>
+        <div v-if="data.statusText" class="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
+          {{ data.statusText }}
+        </div>
       </div>
 
       <!-- Image preview area | 图片预览区域 -->
@@ -361,11 +364,14 @@ import { TrashOutline, ExpandOutline, ImageOutline, CloseCircleOutline, CopyOutl
 import { updateNode, removeNode, duplicateNode, addNode, addEdge, nodes, currentProjectId } from '../../stores/canvas'
 import NodeHandleMenu from './NodeHandleMenu.vue'
 import { saveAsset, reloadAsset } from '../../api/assets'
+import { useModelStore } from '../../stores/pinia'
 
 const props = defineProps({
   id: String,
   data: Object
 })
+
+const modelStore = useModelStore()
 
 // Vue Flow instance | Vue Flow 实例
 const { updateNodeInternals } = useVueFlow()
@@ -466,8 +472,8 @@ const handleSelect = (item) => {
 
     // Create imageConfig node
     const configNodeId = addNode('imageConfig', { x: nodeX + 900, y: nodeY }, {
-      model: 'doubao-seedream-4-5-251128',
-      size: '2048x2048',
+      model: modelStore.selectedImageModel || 'gpt-image-2',
+      size: '1024x1024',
       label: '生图配置'
     })
 
@@ -675,8 +681,8 @@ const createInpaintWorkflow = () => {
   
   // Create imageConfig node for inpainting | 创建图生图配置节点
   const configNodeId = addNode('imageConfig', { x: nodeX + 600, y: nodeY }, {
-    model: 'doubao-seedream-4-5-251128',
-    size: '2048x2048',
+    model: modelStore.selectedImageModel || 'gpt-image-2',
+    size: '1024x1024',
     label: '局部重绘',
     inpaintMode: true
   })
@@ -957,8 +963,8 @@ const handleImageGen = () => {
 
   // Create imageConfig node for generation | 创建生图配置节点
   const configNodeId = addNode('imageConfig', { x: nodeX + 900, y: nodeY }, {
-    model: 'doubao-seedream-4-5-251128',
-    size: '2048x2048',
+    model: modelStore.selectedImageModel || 'gpt-image-2',
+    size: '1024x1024',
     label: '生图配置'
   })
 

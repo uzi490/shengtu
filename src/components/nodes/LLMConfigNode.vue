@@ -417,7 +417,7 @@ const handleSelect = (item) => {
   const nodeY = currentNode?.position?.y || 0
 
   const defaultData = {
-    imageConfig: { model: 'doubao-seedream-4-5-251128', size: '2048x2048', label: '文生图' },
+    imageConfig: { model: 'gpt-image-2', size: '1024x1024', label: '文生图' },
     videoConfig: { label: '视频生成' },
     text: { content: '', label: '文本输入' }
   }
@@ -1003,8 +1003,8 @@ const handleSplitToTextWithImage = () => {
         position: { x: baseX + colSpacing, y: segY },
         data: {
           label: `图片 ${i + 1}`,
-          model: 'doubao-seedream-4-5-251128',
-          size: '2048x2048'
+          model: 'gpt-image-2',
+          size: '1024x1024'
         }
       }
       nodeSpecs.push(imageConfigSpec)

@@ -157,6 +157,69 @@ export const useImageGeneration = () => {
   const images = ref([])
   const currentImage = ref(null)
 
+  const isGptImageModel = (model = '') => String(model).startsWith('gpt-image')
+
+  const normalizeImageEditSize = (size = '') => {
+    const match = String(size).match(/^(\d+)x(\d+)$/)
+    if (!match) return '1024x1024'
+
+    const width = Number(match[1])
+    const height = Number(match[2])
+    if (width > height) return '1536x1024'
+    if (height > width) return '1024x1536'
+    return '1024x1024'
+  }
+
+  const normalizeImageEditQuality = (quality = '') => {
+    return ['low', 'medium', 'high', 'auto'].includes(quality) ? quality : 'auto'
+  }
+
+  const imageSourceToFile = async (source, index = 0) => {
+    if (source instanceof File) return source
+
+    if (source instanceof Blob) {
+      return new File([source], `reference-${index + 1}.png`, { type: source.type || 'image/png' })
+    }
+
+    if (typeof source !== 'string' || !source) {
+      throw new Error('参考图格式不正确')
+    }
+
+    let response
+    try {
+      response = await fetch(source)
+    } catch {
+      throw new Error('参考图读取失败，请使用上传图片或素材库里的图片再试')
+    }
+
+    if (!response.ok) {
+      throw new Error('参考图读取失败，请重新上传图片后再试')
+    }
+
+    const blob = await response.blob()
+    const mimeType = blob.type || 'image/png'
+    const extension = mimeType.split('/')[1]?.split('+')[0] || 'png'
+    return new File([blob], `reference-${index + 1}.${extension}`, { type: mimeType })
+  }
+
+  const buildImageEditFormData = async (params, modelConfig) => {
+    const imageList = Array.isArray(params.image) ? params.image : [params.image]
+    const formData = new FormData()
+
+    formData.append('model', params.model)
+    formData.append('prompt', params.prompt || '请基于参考图生成一张新图')
+    formData.append('size', normalizeImageEditSize(params.size || modelConfig?.defaultParams?.size))
+    if (params.n) formData.append('n', String(params.n))
+    formData.append('quality', normalizeImageEditQuality(params.quality))
+
+    const files = await Promise.all(imageList.filter(Boolean).map(imageSourceToFile))
+    files.forEach(file => {
+      formData.append('image[]', file, file.name)
+    })
+
+    return formData
+  }
+
   /**
    * Generate image with fixed params | 固定参数生成图片
    * @param {Object} params - { model, prompt, size, n, image (optional ref image) }
@@ -168,6 +231,21 @@ export const useImageGeneration = () => {
 
     try {
       const modelConfig = getModelByName(params.model)
+
+      const hasReferenceImage = Boolean(params.image && (!Array.isArray(params.image) || params.image.length > 0))
+
+      if (hasReferenceImage && isGptImageModel(params.model)) {
+        const formData = await buildImageEditFormData(params, modelConfig)
+        const response = await generateImage(formData, {
+          requestType: 'formdata',
+          endpoint: modelStore.getImageEditEndpoint(params.model)
+        })
+        const adaptedData = adaptResponse('image', response)
+        images.value = adaptedData
+        currentImage.value = adaptedData[0] || null
+        setSuccess()
+        return adaptedData
+      }
 
       // Build request data | 构建请求数据
       const requestData = {

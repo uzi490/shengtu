@@ -13,9 +13,18 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      '/api/ai': {
+        target: 'https://api.aiaiai001.com',
+        changeOrigin: true,
+        timeout: 180000,
+        proxyTimeout: 180000,
+        rewrite: (path) => path.replace(/^\/api\/ai/, '')
+      },
       '/v1': {
         target: 'https://api.aiaiai001.com',
-        changeOrigin: true
+        changeOrigin: true,
+        timeout: 180000,
+        proxyTimeout: 180000
       }
     }
   }

@@ -15,6 +15,7 @@ export const PROVIDERS = {
     endpoints: {
       chat: '/v1/chat/completions',
       image: '/v1/images/generations',
+      imageEdit: '/v1/images/edits',
       video: '/v1/video/generations',
       videoQuery: '/v1/video/task/{taskId}',
       // Gemini 生图专用端点

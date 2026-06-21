@@ -56,7 +56,7 @@ const inferApiKeyPurpose = (url = '') => {
 // Create axios instance | 创建 axios 实例
 const instance = axios.create({
   baseURL: "/",
-  timeout: 30000000
+  timeout: 180000
 })
 
 // Request interceptor | 请求拦截器
@@ -181,6 +181,10 @@ const getResponseErrorMessage = (status, data, fallback = '请求失败') => {
 
   if (status === 429) {
     return upstreamMessage || '图片生成被限流或额度/并发不足，请稍后重试，或换一个图片模型 / 降低尺寸后再生成'
+  }
+
+  if (status === 502 || status === 503 || status === 504) {
+    return upstreamMessage || '生成结果回传超时。图片可能已经生成并扣费，请先检查素材库或后台日志，不要马上重复点击生成'
   }
 
   return upstreamMessage || fallback || `请求失败：HTTP ${status}`

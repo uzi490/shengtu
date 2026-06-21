@@ -439,7 +439,7 @@ const handleSelect = (item) => {
   const nodeY = currentNode?.position?.y || 0
 
   const defaultData = {
-    imageConfig: { model: modelStore.selectedImageModel || 'gpt-image-2', size: '2048x2048', label: '文生图' },
+    imageConfig: { model: modelStore.selectedImageModel || 'gpt-image-2', size: '1024x1024', label: '文生图' },
     videoConfig: { label: '视频生成' },
     llmConfig: { label: 'LLM文本生成' }
   }
@@ -695,7 +695,7 @@ const handleImageGen = () => {
   // Create imageConfig node | 创建text生图配置节点
   const configNodeId = addNode('imageConfig', { x: nodeX + 400, y: nodeY }, {
     model: modelStore.selectedImageModel || 'gpt-image-2',
-    size: '2048x2048',
+    size: '1024x1024',
     label: '文生图'
   })
 
