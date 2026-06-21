@@ -78,15 +78,9 @@ export const IMAGE_MODELS = [
     provider: ['longcheng'],
     sizes: [
         { label: '1:1 (1024×1024)', key: '1024x1024' },
-        { label: '16:9 (1360×768)', key: '1360x768' },
-        { label: '9:16 (768×1360)', key: '768x1360' },
-        { label: '4:3 (1280×960)', key: '1280x960' },
-        { label: '3:4 (960×1280)', key: '960x1280' },
-        { label: '3:2 (1200×800)', key: '1200x800' },
-        { label: '2:3 (800×1200)', key: '800x1200' },
-        { label: '4:5 (1024×1280)', key: '1024x1280' },
-        { label: '5:4 (1280×1024)', key: '1280x1024' },
-        { label: '21:9 (1680×720)', key: '1680x720' }
+        { label: '横版 (1536×1024)', key: '1536x1024' },
+        { label: '竖版 (1024×1536)', key: '1024x1536' },
+        { label: '自动 (auto)', key: 'auto' }
         ],
     maxN: 1,
     defaultParams: {

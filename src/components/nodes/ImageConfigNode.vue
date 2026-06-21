@@ -321,6 +321,30 @@ const displaySize = computed(() => {
   return option?.label || localSize.value
 })
 
+const getDefaultSizeForModel = (model, quality) => {
+  const config = getModelConfig(model)
+  const options = getModelSizeOptions(model, quality)
+
+  if (config?.defaultParams?.size && options.some(o => o.key === config.defaultParams.size)) {
+    return config.defaultParams.size
+  }
+
+  return options.find(o => o.key === '1024x1024')?.key
+    || options.find(o => o.key === '1:1')?.key
+    || options.find(o => o.key === '1x1')?.key
+    || options[0]?.key
+    || '1024x1024'
+}
+
+const ensureSupportedSize = () => {
+  const options = sizeOptions.value
+  if (options.length === 0) return
+  if (options.some(o => o.key === localSize.value)) return
+
+  localSize.value = getDefaultSizeForModel(localModel.value, localQuality.value)
+  updateNode(props.id, { size: localSize.value })
+}
+
 // Initialize on mount | 挂载时初始化
 onMounted(() => {
   // 检查当前模型是否在可用模型列表中
@@ -332,6 +356,7 @@ onMounted(() => {
     localModel.value = modelStore.selectedImageModel || availableModels[0]?.key || DEFAULT_IMAGE_MODEL
     updateNode(props.id, { model: localModel.value })
   }
+  ensureSupportedSize()
 })
 
 // 解析 textNode 内容中的 @ 引用，转换为简短引用（如 图 1）并收集图片
@@ -523,17 +548,7 @@ const handleModelSelect = (key) => {
   }
 
   // 同步 Size 到模型默认值
-  const newSizeOptions = getModelSizeOptions(key, localQuality.value)
-  let defaultSize = config?.defaultParams?.size
-
-  if (!defaultSize && newSizeOptions.length > 0) {
-    // 备用逻辑：优先使用 1:1 或 1024 相关的尺寸
-    defaultSize = newSizeOptions.find(o => o.key === '1:1')?.key
-      || newSizeOptions.find(o => o.key === '1x1')?.key
-      || newSizeOptions.find(o => o.key.includes('1024'))?.key
-      || newSizeOptions[0].key
-  }
-
+  const defaultSize = getDefaultSizeForModel(key, localQuality.value)
   localSize.value = defaultSize
 
   // 更新节点数据

@@ -160,7 +160,13 @@ export const useImageGeneration = () => {
   const isGptImageModel = (model = '') => String(model).startsWith('gpt-image')
 
   const normalizeImageEditSize = (size = '') => {
-    const match = String(size).match(/^(\d+)x(\d+)$/)
+    const value = String(size || '').trim()
+    if (value === 'auto') return 'auto'
+
+    const supportedSizes = ['1024x1024', '1536x1024', '1024x1536']
+    if (supportedSizes.includes(value)) return value
+
+    const match = value.match(/^(\d+)x(\d+)$/)
     if (!match) return '1024x1024'
 
     const width = Number(match[1])
