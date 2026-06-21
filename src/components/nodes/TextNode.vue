@@ -68,6 +68,9 @@
           <span v-else>✨</span>
           AI 润色
         </button>
+        <p class="mt-2 text-[11px] leading-4 text-[var(--text-secondary)]">
+          用参考图时写清楚“保留参考图主体/颜色/款式，只优化背景、光影或场景”。
+        </p>
       </div>
 
       <!-- Handles | 连接点 -->
@@ -116,7 +119,7 @@ const isApiConfigured = computed(() => !!modelStore.currentApiKey)
 
 // Chat hook for polish | 润色用的 Chat hook
 const { send: sendChat } = useChat({
-  systemPrompt: '你是一个专业的AI绘画提示词专家。识别用户描述的核心元素（人物、动作、场景、风格），并补充专业的生图要素：光照、构图、细节、质感、情绪氛围。只输出优化后的提示词，不要其他内容。如果用户描述过于简单，默认使用写实摄影风格。'
+  systemPrompt: '你是一个专业的AI绘画提示词专家。识别用户描述的核心元素（人物、动作、场景、风格），并补充专业的生图要素：光照、构图、细节、质感、情绪氛围。只输出优化后的提示词，不要其他内容。如果输入包含参考图，必须明确写出保留参考图主体、颜色、款式、材质、轮廓和装饰，只优化用户要求改变的部分。'
 })
 
 // Local content state | 本地内容状态
@@ -403,6 +406,24 @@ const plainText = computed(() => {
   return content.value
 })
 
+const getMentionedImages = () => {
+  return parseMentions(content.value)
+    .map(mention => nodes.value.find(n => n.id === mention.nodeId))
+    .filter(node => node?.type === 'image')
+    .map(node => node.data?.base64 || node.data?.url)
+    .filter(Boolean)
+}
+
+const buildPolishInput = (input, hasReferenceImages) => {
+  if (!hasReferenceImages) return input
+
+  return [
+    '这是用于图生图的提示词润色，输入里包含参考图。',
+    '请把输出改写成适合图生图的专业提示词，并明确要求：保留参考图里的主体商品/人物/物体、颜色、款式、材质、轮廓、图案、装饰和比例关系；只根据用户要求优化背景、光影、构图、清晰度、电商展示质感或指定变化；不要把参考图主体替换成另一件商品或另一个主体。',
+    `用户原始要求：${input}`
+  ].join('\n\n')
+}
+
 // 将 @[nodeId] 转换为带图片的 HTML
 const editorHtml = computed(() => {
   let html = content.value
@@ -631,7 +652,10 @@ const handlePolish = async () => {
 
   try {
     // Call chat API to polish the prompt | 调用 AI 润色提示词
-    const result = await sendChat(input, true)
+    const referenceImages = getMentionedImages()
+    const result = await sendChat(buildPolishInput(input, referenceImages.length > 0), true, {
+      images: referenceImages
+    })
     
     if (result) {
       content.value = result
